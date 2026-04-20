@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Loan Products</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* === VIBRANT LIGHT THEME VARIABLES === */
+        :root { 
+            --bg-main: #ffffff; --bg-alt: #f8fafc;
+            --text-dark: #0f172a; --text-muted: #475569; 
+            --color-blue: #2563eb; --color-cyan: #06b6d4; --color-purple: #8b5cf6;
+            --color-pink: #ec4899; --color-orange: #f97316; --color-green: #10b981;
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none; }
+        html { scroll-behavior: smooth; } 
+        body { background-color: var(--bg-main); color: var(--text-dark); overflow-x: hidden; line-height: 1.6; } 
+        a, button, details summary { cursor: none; } 
+        input, select, textarea { cursor: text !important; }
+        input[type=range]::-webkit-slider-thumb { cursor: pointer !important; }
+        ul { list-style: none; }
+        ::-webkit-scrollbar { display: none; }
+
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-stopped { overflow: hidden; }
+
+        /* === PRELOADER === */
+        #preloader { position: fixed; inset: 0; background: var(--bg-main); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease, visibility 0.8s; }
+        .loader-ring { width: 60px; height: 60px; border: 4px solid #e2e8f0; border-top-color: var(--color-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* === CUSTOM MOUSE CURSOR === */
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999 !important; transition: width 0.2s, height 0.2s; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998 !important; transition: width 0.2s, height 0.2s, border-color 0.2s; transition-duration: 150ms; transition-timing-function: ease-out; }
+        body.hovering .cursor-dot { width: 0; height: 0; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); backdrop-filter: blur(2px); }
+        body.typing-mode .cursor-dot, body.typing-mode .cursor-outline { display: none !important; }
+
+        /* === DYNAMIC MESH BACKGROUND === */
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); overflow: hidden; pointer-events: none; }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-pink); animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: var(--color-orange); animation-delay: -10s; }
+        @keyframes floatMesh { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10vw, 15vh) scale(1.2); } 100% { transform: translate(-10vw, 5vh) scale(0.8); } }
+        #canvas-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+
+        /* === LAYOUT UTILS === */
+        .container { max-width: 1320px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+        .section-padding { padding: 120px 0; position: relative; }
+        .text-gradient-blue { background: linear-gradient(to right, var(--color-blue), var(--color-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn { padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; color: white; background: var(--text-dark); box-shadow: var(--shadow-soft); text-decoration: none;}
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: var(--color-blue); }
+        .btn-gradient { background: linear-gradient(135deg, var(--color-blue), var(--color-cyan)); color: white; }
+        .btn-outline { background: white; border: 2px solid #e2e8f0; color: var(--text-dark); display: inline-block; padding: 12px 28px; border-radius: 12px; font-weight: 700; transition: 0.3s; }
+        .btn-outline:hover { background: var(--bg-alt); border-color: var(--color-pink); color: var(--color-pink); transform: translateY(-3px); box-shadow: var(--shadow-soft); }
+        .magnetic-wrap { display: inline-block; width: 100%; text-align: center; }
+        .magnetic-wrap-nav { display: inline-block; }
+
+        /* === 🟢 FIXED UNIVERSAL NAVBAR === */
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 85px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); z-index: 100; display: flex; align-items: center; transition: all 0.4s; }
+        .navbar.scrolled { background: rgba(255, 255, 255, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: 75px; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+        .custom-logo { height: 40px; transition: 0.5s; cursor: none; }
+        .nav-links { display: flex; gap: 36px; align-items: center; position: absolute; left: 50%; transform: translateX(-50%); }
+        .nav-links a { font-size: 15px; font-weight: 700; color: var(--text-muted); transition: 0.3s; position: relative; padding-bottom: 5px; text-decoration: none;}
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 3px; bottom: -5px; left: 50%; background: var(--color-purple); transition: 0.3s var(--smooth); transform: translateX(-50%); border-radius: 5px; }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-purple); } .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+
+        /* === EXPANDING FAB MENU === */
+        .fab-container { position: fixed; bottom: 40px; right: 40px; z-index: 999; display: flex; flex-direction: column-reverse; align-items: center; gap: 15px; }
+        .fab-btn { width: 65px; height: 65px; background: linear-gradient(135deg, var(--color-orange), var(--color-pink)); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); cursor: none; transition: 0.3s var(--spring); z-index: 10; position: relative; }
+        .fab-btn:hover { transform: scale(1.1); }
+        .fab-menu { display: flex; flex-direction: column; gap: 15px; position: absolute; bottom: 80px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: 0.4s var(--spring); }
+        .fab-container:hover .fab-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .fab-item { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.3s; position: relative; border: 1px solid #e2e8f0; }
+        .fab-item:hover { transform: scale(1.1); background: var(--color-blue); color: white; border-color: var(--color-blue); }
+        .fab-item::after { content: attr(data-tooltip); position: absolute; right: 65px; background: var(--text-dark); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; opacity: 0; transform: translateX(10px); transition: 0.3s; pointer-events: none; }
+        .fab-item:hover::after { opacity: 1; transform: translateX(0); }
+
+        /* === PAGE HEADER === */
+        .page-header { padding: 180px 0 60px; text-align: center; }
+        .page-title { font-size: 64px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -2px; color: var(--text-dark); }
+        .page-desc { font-size: 20px; color: var(--text-muted); max-width: 800px; margin: 0 auto; font-weight: 500; }
+
+        /* === DETAILED LOAN CARDS GRID === */
+        .loan-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-bottom: 80px; }
+        .loan-card { background: white; border-radius: 32px; padding: 40px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-soft); transition: 0.4s var(--spring); position: relative; overflow: hidden; }
+        .loan-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.1); border-color: var(--color-blue); }
+        
+        .loan-icon-wrap { width: 70px; height: 70px; border-radius: 20px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px; color: white; }
+        .loan-card:nth-child(1) .loan-icon-wrap { background: linear-gradient(135deg, #3b82f6, #06b6d4); box-shadow: 0 10px 20px rgba(37,99,235,0.3); }
+        .loan-card:nth-child(2) .loan-icon-wrap { background: linear-gradient(135deg, #10b981, #14b8a6); box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
+        .loan-card:nth-child(3) .loan-icon-wrap { background: linear-gradient(135deg, #f97316, #f43f5e); box-shadow: 0 10px 20px rgba(249,115,22,0.3); }
+        .loan-card:nth-child(4) .loan-icon-wrap { background: linear-gradient(135deg, #ec4899, #8b5cf6); box-shadow: 0 10px 20px rgba(236,72,153,0.3); }
+        .loan-card:nth-child(5) .loan-icon-wrap { background: linear-gradient(135deg, #8b5cf6, #6366f1); box-shadow: 0 10px 20px rgba(139,92,246,0.3); }
+        .loan-card:nth-child(6) .loan-icon-wrap { background: linear-gradient(135deg, #14b8a6, #0ea5e9); box-shadow: 0 10px 20px rgba(20,184,166,0.3); }
+
+        .loan-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; color: var(--text-dark); }
+        .loan-desc { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
+        
+        .loan-features { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; background: var(--bg-alt); padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9; }
+        .feat-item { font-size: 14px; font-weight: 700; color: var(--text-dark); display: flex; flex-direction: column; gap: 4px; }
+        .feat-val { color: var(--color-blue); font-size: 18px; font-weight: 800; }
+
+        .loan-card:nth-child(2) .feat-val { color: var(--color-green); }
+        .loan-card:nth-child(3) .feat-val { color: var(--color-orange); }
+        .loan-card:nth-child(4) .feat-val { color: var(--color-pink); }
+        .loan-card:nth-child(5) .feat-val { color: var(--color-purple); }
+        .loan-card:nth-child(6) .feat-val { color: var(--color-cyan); }
+
+        /* === CALCULATOR (Re-used for utility) === */
+        .calc-wrapper { max-width: 900px; margin: 80px auto; perspective: 1500px; }
+        .calc-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 32px; padding: 40px; box-shadow: var(--shadow-soft); transform-style: preserve-3d; position: relative; transition: transform 0.1s; }
+        .form-group { margin-bottom: 25px; transform: translateZ(15px); }
+        .form-label { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .range-labels { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+        .val-max { color: var(--text-dark); font-size: 32px; font-weight: 800; }
+        input[type=range] { width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--color-blue); box-shadow: 0 4px 10px rgba(37,99,235,0.3); transition: 0.2s var(--spring); border: 4px solid white; cursor: pointer !important; }
+        
+        .tenure-btns { display: flex; gap: 12px; transform: translateZ(15px); }
+        .tenure-btn { flex: 1; padding: 12px; border-radius: 12px; background: white; border: 2px solid #e2e8f0; font-weight: 800; color: var(--text-muted); transition: 0.3s; text-align: center; }
+        .tenure-btn.active { background: #eff6ff; color: var(--color-blue); border-color: var(--color-blue); }
+        
+        .dashboard-result { display: flex; align-items: center; gap: 30px; background: var(--bg-alt); border: 1px solid #e2e8f0; padding: 30px; border-radius: 24px; transform: translateZ(25px); margin-top: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); }
+        .result-data { flex: 1; }
+        .result-top { margin-bottom: 15px; }
+        .result-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+        .result-val { font-size: 40px; font-weight: 800; color: var(--text-dark); }
+        .rate-val { font-size: 20px; font-weight: 800; color: var(--color-green); margin-top: 10px; display: inline-block; padding: 5px 12px; background: #d1fae5; border-radius: 8px;}
+        .donut-container { width: 120px; height: 120px; position: relative; border-radius: 50%; background: conic-gradient(var(--color-green) 0% 50%, var(--color-rose) 50% 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: background 0.4s var(--smooth); }
+        .donut-inner { width: 80px; height: 80px; background: var(--bg-alt); border-radius: 50%; box-shadow: inset 0 5px 10px rgba(0,0,0,0.05); }
+        .amort-labels { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; font-size: 13px; font-weight: 700; color: var(--text-dark); }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+
+        @media (max-width: 768px) {
+            .loan-grid { grid-template-columns: 1fr; }
+            .dashboard-result { flex-direction: column; text-align: center; }
+        }
+
+        /* === FOOTER === */
+        .footer { background: white; padding: 80px 0 40px; position: relative; overflow: hidden; margin-top: 60px; border-top: 1px solid #e2e8f0; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 60px; margin-bottom: 60px; position: relative; z-index: 10; }
+        .footer-brand p { color: var(--text-muted); font-size: 16px; margin: 20px 0; max-width: 350px; font-weight: 500; }
+        .social-links { display: flex; gap: 16px; margin-top: 20px;}
+        .social-links a { width: 48px; height: 48px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: all 0.3s; }
+        .social-links a:hover { background: var(--color-blue); color: white; border-color: var(--color-blue); transform: translateY(-5px); box-shadow: var(--shadow-glow); }
+        .footer h4 { font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 30px; letter-spacing: 1px; color: var(--text-dark); }
+        .footer-links li { margin-bottom: 18px; } .footer-links a { color: var(--text-muted); transition: 0.3s; font-weight: 600; text-decoration: none;}
+        .footer-links a:hover { color: var(--color-blue); transform: translateX(8px); display: inline-block; }
+        .footer-bottom { border-top: 1px solid #e2e8f0; padding-top: 30px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-muted); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="preloader"><div class="loader-ring"></div></div>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-content">
+            <div class="magnetic-wrap-nav"><a href="/"><img src="/static/Companylogo1.png" alt="Smart Choice" class="custom-logo magnetic-btn hover-target"></a></div>
+            <div class="nav-links">
+                <div class="magnetic-wrap-nav"><a href="/#home" class="magnetic-btn hover-target">Platform</a></div>
+                <div class="magnetic-wrap-nav"><a href="/properties.html" class="magnetic-btn hover-target">Properties</a></div>
+                <div class="magnetic-wrap-nav"><a href="/loans-details.html" class="active magnetic-btn hover-target">Loans</a></div>
+                <div class="magnetic-wrap-nav"><a href="/credit-score.html" class="magnetic-btn hover-target">Credit Score</a></div>
+                
+            </div>
+            <div class="magnetic-wrap-nav" style="margin-left: auto;">
+                {% if user_status.logged_in %}
+                    <button class="btn btn-gradient magnetic-btn hover-target" onclick="window.location.href='{{ user_status.dashboard }}'">My Dashboard ➔</button>
+                {% else %}
+                    <button class="btn btn-outline magnetic-btn hover-target" onclick="window.location.href='/login.html'">Login / Apply</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section class="page-header container">
+        <h1 class="page-title gsap-reveal">Complete <span class="text-gradient-blue">Loan Portfolio</span></h1>
+        <p class="page-desc gsap-reveal" data-delay="0.1">Tailored financing solutions for every milestone. Experience transparency, competitive rates, and lightning-fast digital processing.</p>
+    </section>
+
+    <section class="container">
+        <div class="loan-grid">
+            
+            <div class="loan-card gsap-reveal hover-target">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                </div>
+                <h3 class="loan-title">Home Purchase Loan</h3>
+                <p class="loan-desc">The perfect financing option for buying ready-to-move-in apartments, villas, and developer properties with maximum funding.</p>
+                <div class="loan-features">
+                    <div class="feat-item">Starting Rate <span class="feat-val">8.40% p.a.</span></div>
+                    <div class="feat-item">Max LTV <span class="feat-val">Up to 90%</span></div>
+                    <div class="feat-item">Max Tenure <span class="feat-val">30 Years</span></div>
+                    <div class="feat-item">Processing Fee <span class="feat-val">Zero*</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-blue); color: var(--color-blue);" onclick="window.location.href='/login.html?product=Home Purchase&register=true'">Apply Now</button>
+            </div>
+
+            <div class="loan-card gsap-reveal hover-target" data-delay="0.1">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h3 class="loan-title">Construction Loan</h3>
+                <p class="loan-desc">Flexible, milestone-based financing for building a custom home on a plot you already own. Tranche-based disbursals protect your interest.</p>
+                <div class="loan-features">
+                    <div class="feat-item">Starting Rate <span class="feat-val">8.50% p.a.</span></div>
+                    <div class="feat-item">Funding <span class="feat-val">100% Const.</span></div>
+                    <div class="feat-item">Max Tenure <span class="feat-val">20 Years</span></div>
+                    <div class="feat-item">Disbursal <span class="feat-val">Tranche Based</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-green); color: var(--color-green);" onclick="window.location.href='/login.html?product=Construction Loan&register=true'">Apply Now</button>
+            </div>
+
+            <div class="loan-card gsap-reveal hover-target">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                </div>
+                <h3 class="loan-title">Balance Transfer (BT)</h3>
+                <p class="loan-desc">Paying high interest elsewhere? Switch your existing home loan to Smart Choice effortlessly and save lakhs on your total interest payout.</p>
+                <div class="loan-features">
+                    <div class="feat-item">BT Rate <span class="feat-val">8.35% p.a.</span></div>
+                    <div class="feat-item">Top-Up <span class="feat-val">Available</span></div>
+                    <div class="feat-item">Foreclosure <span class="feat-val">Nil</span></div>
+                    <div class="feat-item">Processing <span class="feat-val">Flat ₹5000</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-orange); color: var(--color-orange);" onclick="window.location.href='/login.html?product=Balance Transfer&register=true'">Apply Now</button>
+            </div>
+
+            <div class="loan-card gsap-reveal hover-target" data-delay="0.1">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="loan-title">NRI Home Loans</h3>
+                <p class="loan-desc">Specialized property financing for Non-Resident Indians to invest in their homeland. Fast-track processing with a dedicated Relationship Manager.</p>
+                <div class="loan-features">
+                    <div class="feat-item">Starting Rate <span class="feat-val">8.60% p.a.</span></div>
+                    <div class="feat-item">POA Support <span class="feat-val">Yes</span></div>
+                    <div class="feat-item">Max Tenure <span class="feat-val">15 Years</span></div>
+                    <div class="feat-item">Assistance <span class="feat-val">Dedicated RM</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-pink); color: var(--color-pink);" onclick="window.location.href='/login.html?product=NRI Home Loan&register=true'">Apply Now</button>
+            </div>
+
+            <div class="loan-card gsap-reveal hover-target">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                </div>
+                <h3 class="loan-title">Top-Up Loans</h3>
+                <p class="loan-desc">Need funds for renovation, children's education, or medical emergencies? Get an instant top-up over your existing active home loan.</p>
+                <div class="loan-features">
+                    <div class="feat-item">Starting Rate <span class="feat-val">9.10% p.a.</span></div>
+                    <div class="feat-item">Max Amount <span class="feat-val">₹50 Lakhs</span></div>
+                    <div class="feat-item">Approval <span class="feat-val">Instant*</span></div>
+                    <div class="feat-item">Usage <span class="feat-val">Multi-purpose</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-purple); color: var(--color-purple);" onclick="window.location.href='/login.html?product=Top-Up Loan&register=true'">Apply Now</button>
+            </div>
+
+            <div class="loan-card gsap-reveal hover-target" data-delay="0.1">
+                <div class="loan-icon-wrap">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                </div>
+                <h3 class="loan-title">Plot Purchase Loan</h3>
+                <p class="loan-desc">Secure prime real estate for future construction. We offer specialized loans for purchasing vacant residential plots in approved layouts.</p>
+                <div class="loan-features">
+                    <div class="feat-item">Starting Rate <span class="feat-val">8.85% p.a.</span></div>
+                    <div class="feat-item">Max LTV <span class="feat-val">Up to 75%</span></div>
+                    <div class="feat-item">Max Tenure <span class="feat-val">15 Years</span></div>
+                    <div class="feat-item">Property <span class="feat-val">Govt Approved</span></div>
+                </div>
+                <button class="btn btn-outline magnetic hover-target" style="width: 100%; border-color: var(--color-cyan); color: var(--color-cyan);" onclick="window.location.href='/login.html?product=Plot Purchase&register=true'">Apply Now</button>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="section-padding" style="background: var(--bg-main); border-top: 1px solid #e2e8f0;">
+        <div class="container">
+            <div class="section-header gsap-reveal">
+                <h2>Plan Your Finances</h2>
+                <p>Use our advanced dynamic calculator to plan your EMIs before you apply.</p>
+            </div>
+            <div class="calc-wrapper gsap-reveal">
+                <div class="calc-card hover-target" id="interactive-card">
+                    <div class="form-group">
+                        <label class="form-label">Loan Amount Required</label>
+                        <div class="range-labels"><span style="color:var(--text-muted); font-size:14px; font-weight:700;">₹10L</span><span class="val-max" id="display-amount">₹50,00,000</span></div>
+                        <input type="range" id="loan-amount" min="1000000" max="100000000" step="1000000" value="50000000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Loan Tenure (Years)</label>
+                        <div class="tenure-btns">
+                            <button class="tenure-btn magnetic-btn hover-target">10</button>
+                            <button class="tenure-btn active magnetic-btn hover-target">15</button>
+                            <button class="tenure-btn magnetic-btn hover-target">20</button>
+                        </div>
+                    </div>
+                    <div class="dashboard-result">
+                        <div class="donut-container" id="donut-chart">
+                            <div class="donut-inner"></div>
+                        </div>
+                        <div class="result-data">
+                            <div class="result-top">
+                                <div class="result-label">Estimated Monthly EMI</div>
+                                <div class="result-val" id="display-emi">₹49,236</div>
+                                <div class="rate-val">8.50% p.a.</div>
+                            </div>
+                            <div class="amort-labels">
+                                <span><span class="dot" style="background:var(--color-green);"></span>Principal: <span id="lbl-principal">50%</span></span>
+                                <span><span class="dot" style="background:var(--color-rose);"></span>Interest: <span id="lbl-interest">50%</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="gsap-reveal">
+                    <img src="/static/Companylogo1.png" alt="Company IT Park" class="custom-logo hover-target" style="margin-bottom: 20px; filter: brightness(0) invert(1);">
+                    <p>Empowering the next generation of tech giants at Company IT Park. Built for creators, by creators.</p>
+                </div>
+                <div class="gsap-reveal" data-delay="0.1">
+                    <h4>Platform</h4>
+                    <ul class="footer-links">
+                        <li><a href="/#infrastructure" class="hover-target">Loan Origination</a></li>
+                        <li><a href="/login.html" class="hover-target">Customer Portal</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.2">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="hover-target">About Company</a></li>
+                        <li><a href="/login.html" class="hover-target">Bank Partnerships</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.3">
+                    <h4>Contact Us</h4>
+                    <div class="contact-box hover-target magnetic-wrap">
+                        <div class="magnetic">
+                            <p style="color:var(--text-muted); margin-bottom:10px;"><svg width="20" height="20" fill="none" stroke="var(--color-blue)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> Sales</p>
+                            <a href="tel:+917338941579">(+91) 9876543210</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom gsap-reveal">
+                <div>&copy; 2026 Company. All rights reserved. Built for modern finance.</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 800);
+            }, 800);
+
+            try {
+                if (typeof Lenis !== 'undefined') {
+                    const lenis = new Lenis({ duration: 1.2, smooth: true });
+                    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+                    requestAnimationFrame(raf);
+                    
+                    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                        lenis.on('scroll', ScrollTrigger.update);
+                        gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
+                        gsap.ticker.lagSmoothing(0);
+                    }
+                }
+            } catch (e) { }
+
+            try {
+                if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                    gsap.registerPlugin(ScrollTrigger);
+                    document.querySelectorAll('.gsap-reveal').forEach(el => {
+                        let delay = el.getAttribute('data-delay') || 0;
+                        gsap.fromTo(el, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: parseFloat(delay), scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" } });
+                    });
+                }
+            } catch (e) { }
+
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+                document.querySelectorAll('.hover-target, a, button').forEach(target => {
+                    target.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+                    target.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+                });
+            }
+
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height, particles = [];
+                const mouse = { x: -1000, y: -1000 };
+                const colors = ['#2563eb', '#ec4899', '#8b5cf6', '#10b981', '#f97316']; 
+
+                function initCanvas() {
+                    width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
+                    particles = [];
+                    for(let i = 0; i < 70; i++) { 
+                        particles.push({ 
+                            x: Math.random() * width, y: Math.random() * height, 
+                            vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, 
+                            size: Math.random() * 2 + 1,
+                            color: colors[Math.floor(Math.random() * colors.length)]
+                        }); 
+                    }
+                }
+                window.addEventListener('resize', initCanvas);
+                window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+                
+                function animateParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy;
+                        if(p.x < 0 || p.x > width) p.vx *= -1; if(p.y < 0 || p.y > height) p.vy *= -1;
+                        
+                        let dx = mouse.x - p.x; let dy = mouse.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 150) { p.x -= dx/30; p.y -= dy/30; }
+                        
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        
+                        particles.forEach(p2 => {
+                            let d = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+                            if(d < 120) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(148, 163, 184, ${0.15 * (1 - d/120)})`; ctx.stroke(); }
+                        });
+                    });
+                    requestAnimationFrame(animateParticles);
+                }
+                initCanvas(); animateParticles();
+            }
+
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); }, { passive: true });
+            
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    if (href.startsWith('#') || (href.includes('#') && href.split('#')[0] === window.location.pathname.split('/').pop())) {
+                        e.preventDefault();
+                        const targetId = href.split('#')[1];
+                        const targetElement = document.getElementById(targetId);
+                        if (targetElement) {
+                            window.scrollTo({ top: targetElement.offsetTop - 85, behavior: 'smooth' });
+                            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.magnetic').forEach(btn => {
+                btn.addEventListener('mousemove', (e) => {
+                    const rect = btn.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) * 0.4; 
+                    const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                    btn.style.transform = `translate(${x}px, ${y}px)`;
+                });
+                btn.addEventListener('mouseleave', () => { btn.style.transform = `translate(0px, 0px)`; });
+            });
+
+            // 3D CALCULATOR & EMI LOGIC
+            const calcCard = document.getElementById('interactive-card');
+            const sliderAmount = document.getElementById('loan-amount');
+            const displayAmt = document.getElementById('display-amount');
+            const displayEmi = document.getElementById('display-emi');
+            const tenureBtns = document.querySelectorAll('.tenure-btn');
+            const barPrincipal = document.getElementById('bar-principal');
+            const barInterest = document.getElementById('bar-interest');
+            const lblPrincipal = document.getElementById('lbl-principal');
+            const lblInterest = document.getElementById('lbl-interest');
+            const donutChart = document.getElementById('donut-chart');
+
+            let years = 15; const annualInterestRate = 8.5; 
+            const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+
+            const calculateEMI = () => {
+                if(!sliderAmount) return;
+                const principal = parseInt(sliderAmount.value);
+                const r = annualInterestRate / 12 / 100; const n = years * 12; 
+                const emi = principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                
+                displayAmt.textContent = formatINR(principal);
+                displayEmi.innerHTML = `${formatINR(emi)}`;
+
+                const totalPayment = emi * n;
+                const principalPercent = Math.round((principal / totalPayment) * 100);
+                const interestPercent = 100 - principalPercent;
+
+                if(donutChart) donutChart.style.background = `conic-gradient(var(--color-green) 0% ${principalPercent}%, var(--color-rose) ${principalPercent}% 100%)`;
+                if(lblPrincipal) {
+                    lblPrincipal.textContent = `${principalPercent}%`; 
+                    lblInterest.textContent = `${interestPercent}%`;
+                }
+            };
+
+            if(sliderAmount) {
+                sliderAmount.addEventListener('input', (e) => {
+                    const value = (sliderAmount.value - sliderAmount.min) / (sliderAmount.max - sliderAmount.min) * 100;
+                    sliderAmount.style.background = `linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) ${value}%, #e2e8f0 ${value}%, #e2e8f0 100%)`;
+                    calculateEMI();
+                });
+                sliderAmount.dispatchEvent(new Event('input')); 
+            }
+
+            tenureBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    tenureBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
+                    years = parseInt(e.target.innerText); 
+                    calculateEMI();
+                });
+            });
+            
+            if (calcCard) {
+                calcCard.addEventListener('mousemove', (e) => {
+                    const rect = calcCard.getBoundingClientRect();
+                    const x = e.clientX - rect.left; const y = e.clientY - rect.top;  
+                    const centerX = rect.width / 2; const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -5; const rotateY = ((x - centerX) / centerX) * 5;
+                    calcCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                });
+                calcCard.addEventListener('mouseleave', () => { calcCard.style.transform = `rotateX(0) rotateY(0) scale3d(1, 1, 1)`; });
+            }
+        });
+    </script>
+</body>
+</html>

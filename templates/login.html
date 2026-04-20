@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Universal Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root { 
+            --bg-main: #f8fafc; --bg-alt: #ffffff;
+            --text-dark: #0f172a; --text-muted: #475569; 
+            --color-blue: #2563eb; --color-cyan: #06b6d4; --color-purple: #8b5cf6; --color-pink: #ec4899;
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none; }
+        body { background-color: var(--bg-main); color: var(--text-dark); overflow: hidden; min-height: 100vh; display: flex; } 
+        a, button { cursor: none; text-decoration: none; } 
+        input, select { cursor: text !important; }
+
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998; transition: width 0.2s, height 0.2s, border-color 0.2s; }
+        body.hovering .cursor-dot { width: 0; height: 0; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); }
+        body.typing-mode .cursor-dot, body.typing-mode .cursor-outline { opacity: 0 !important; visibility: hidden !important; }
+
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-pink); animation-delay: -5s; }
+        @keyframes floatMesh { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 5vh) scale(1.2); } }
+
+        .login-wrapper { display: flex; width: 100%; min-height: 100vh; position: relative; z-index: 1; }
+        
+        .login-brand { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px; }
+        .brand-logo { height: 45px; margin-bottom: 40px; }
+        .brand-title { font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
+        .text-gradient { background: linear-gradient(to right, var(--color-blue), var(--color-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .feature-item { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; margin-top: 15px;}
+        .feature-icon { width: 24px; height: 24px; background: #eff6ff; color: var(--color-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        .login-form-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px; }
+        .login-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid #e2e8f0; border-radius: 32px; padding: 40px 50px; width: 100%; max-width: 480px; box-shadow: var(--shadow-soft); position: relative; overflow: hidden; min-height: 550px; display: flex; flex-direction: column; justify-content: center; }
+        
+        .calc-tabs { display: flex; background: #f8fafc; border-radius: 16px; padding: 6px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .calc-tab { flex: 1; text-align: center; padding: 12px; font-weight: 700; font-size: 15px; border-radius: 12px; color: var(--text-muted); transition: 0.3s; cursor: pointer !important; }
+        .calc-tab.active { background: var(--color-blue); color: white; box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
+
+        .login-header { margin-bottom: 30px; text-align: center; }
+        .login-header h2 { font-size: 32px; font-weight: 800; color: var(--text-dark); margin-bottom: 5px; }
+
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group input { width: 100%; padding: 16px 20px; font-size: 15px; font-weight: 500; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; outline: none; transition: 0.3s; }
+        .input-group label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 500; font-size: 15px; transition: 0.3s; pointer-events: none; background: transparent; padding: 0 5px; }
+        
+        .input-group input:focus { border-color: var(--color-blue); background: white; }
+        .input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label { top: 0; font-size: 12px; font-weight: 700; color: var(--color-blue); background: white; }
+
+        .btn-submit { width: 100%; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 800; border: none; color: white; background: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer !important; margin-top: 10px;}
+        .btn-submit:hover { transform: translateY(-3px); background: var(--color-blue); box-shadow: var(--shadow-glow); }
+
+        .form-view { display: none; width: 100%; }
+        .form-view.active { display: block; }
+        .signup-link { text-align: center; margin-top: 25px; font-weight: 500; color: var(--text-muted); }
+        .signup-link span, .back-to-login { color: var(--color-blue); font-weight: 800; cursor: pointer !important; }
+
+        .btn-loading { pointer-events: none; opacity: 0.8; }
+        .btn-loading .btn-text { display: none; }
+        .btn-loading::after { content: ''; width: 20px; height: 20px; border: 3px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+
+        .back-home { position: absolute; top: 40px; left: 40px; display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-muted); z-index: 10; }
+        
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); z-index: 1100; background: white; padding: 16px 24px; border-radius: 100px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; font-weight: 700; border: 1px solid #e2e8f0; opacity: 0; transition: 0.5s; }
+        .toast-container.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-icon { width: 28px; height: 28px; background: #10b981; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+    </div>
+
+    <a href="/" class="back-home hover-target">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back to Home
+    </a>
+
+    <div class="login-wrapper">
+        <div class="login-brand">
+            <div style="max-width: 500px; margin: 0 auto;" class="gsap-reveal">
+                <img src="/static/Companylogo1.png" alt="Company IT Park" class="brand-logo">
+                <h1 class="brand-title">Welcome to your <br><span class="text-gradient">Digital Portal.</span></h1>
+                <p style="font-size: 18px; color: var(--text-muted); font-weight: 500;">Log in to track your loan applications, manage disbursements, and experience seamless digital lending.</p>
+                <div class="feature-item"><div class="feature-icon">✓</div> Real-time Application Tracking</div>
+                <div class="feature-item"><div class="feature-icon">✓</div> Instant Sanction Letters</div>
+            </div>
+        </div>
+
+        <div class="login-form-container">
+            <div class="login-card gsap-card" id="form-card-wrapper">
+                
+                <div class="calc-tabs" id="login-tabs">
+                    <div class="calc-tab active hover-target" id="tab-customer" onclick="setLoginType('Customer')">Customer</div>
+                    <div class="calc-tab hover-target" id="tab-partner" onclick="setLoginType('Partner')">Partner / DSA</div>
+                </div>
+
+                <div id="view-login" class="form-view active">
+                    <div class="login-header">
+                        <h2 id="login-title">Sign In</h2>
+                        <p id="login-subtitle">Access your Customer dashboard</p>
+                    </div>
+                    <form id="formLogin">
+                        <div class="input-group">
+                            <input type="text" id="login-id" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+                            <label for="login-id" id="login-id-label">Customer Email or APP-ID</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="login-password" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+                            <label for="login-password">Password</label>
+                        </div>
+                        <button type="submit" class="btn-submit hover-target" id="btn-login"><span class="btn-text">Secure Login</span></button>
+                    </form>
+                    <div class="signup-link">
+                        Don't have an account? <span class="hover-target" onclick="switchView('view-register')">Apply Now</span>
+                    </div>
+                </div>
+
+                <div id="view-register" class="form-view">
+    <span class="back-to-login hover-target" onclick="switchView('view-login')">← Back</span>
+    <div class="login-header" style="margin-bottom: 25px;">
+        <h2 id="register-title">Create Account</h2>
+        <p id="register-subtitle">Join as a new Customer</p>
+    </div>
+    
+    <form id="formRegister">
+        <div class="input-group">
+            <input type="text" id="reg-name" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+            <label for="reg-name">Full Name</label>
+        </div>
+        <div class="input-group">
+            <input type="email" id="reg-email" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+            <label for="reg-email">Email Address</label>
+        </div>
+        <div class="input-group">
+            <input type="tel" id="reg-phone" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+            <label for="reg-phone">Phone Number</label>
+        </div>
+        <div class="input-group">
+            <input type="password" id="reg-password" placeholder=" " required onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+            <label for="reg-password">Create Password</label>
+        </div>
+        <button type="submit" class="btn-submit hover-target" id="btn-register"><span class="btn-text">Sign Up</span></button>
+    </form>
+</div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastMsg">
+        <div class="toast-icon">✓</div>
+        <span id="toastText">Action successful!</span>
+    </div>
+
+    <script>
+        let currentLoginType = 'Customer'; // Track the user type
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+            }
+            if (typeof gsap !== 'undefined') {
+                gsap.fromTo(".gsap-reveal", { x: -50, opacity: 0 }, { x: 0, opacity: 1, duration: 1.2, ease: "power4.out", delay: 0.2 });
+                gsap.fromTo(".gsap-card", { y: 50, opacity: 0, scale: 0.95 }, { y: 0, opacity: 1, scale: 1, duration: 1.2, ease: "power4.out", delay: 0.4 });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ... (Unga pazhaya cursor & GSAP code apdiye irukkattum) ...
+
+            // 🟢 AUTO-FILL & DEEP LINKING LOGIC 🟢
+            const urlParams = new URLSearchParams(window.location.search);
+            const applyProduct = urlParams.get('product'); // URL-la irunthu product pera edukkum
+            const autoRegister = urlParams.get('register'); // Direct-a register page poga
+
+            if (applyProduct || autoRegister === 'true') {
+                // 1. Customer tab & Register View-a auto-ma select pannidum
+                setTimeout(() => {
+                    setLoginType('Customer');
+                    switchView('view-register');
+                    
+                    // 2. Form-la Product-a auto-fill pannidum
+                    if (applyProduct) {
+                        const productSelect = document.getElementById('reg-product');
+                        if (productSelect) {
+                            // Dropdown-la antha option illana (e.g., Property Name), puthusa add pannidum!
+                            let optionExists = Array.from(productSelect.options).some(opt => opt.value === applyProduct);
+                            if (!optionExists) {
+                                const newOption = new Option(applyProduct, applyProduct);
+                                productSelect.add(newOption);
+                            }
+                            productSelect.value = applyProduct;
+                            
+                            // Highlight panni kaatta chinna effect
+                            productSelect.style.borderColor = "var(--color-green)";
+                            productSelect.style.backgroundColor = "#f0fdfa";
+                        }
+                    }
+                }, 500); // UI load aaga oru half-second delay
+            }
+        });
+
+        // 🟢 TAB SWITCHING LOGIC
+        window.setLoginType = function(type) {
+            currentLoginType = type;
+            document.getElementById('tab-customer').classList.remove('active');
+            document.getElementById('tab-partner').classList.remove('active');
+            
+            if(type === 'Customer') {
+                document.getElementById('tab-customer').classList.add('active');
+                document.getElementById('login-subtitle').innerText = 'Access your Customer dashboard';
+                document.getElementById('login-id-label').innerText = 'Customer Email or APP-ID';
+                document.getElementById('register-subtitle').innerText = 'Join as a new Customer';
+                document.getElementById('customer-only-fields').style.display = 'block'; // Puthusa add pannathu!
+            } else {
+                document.getElementById('tab-partner').classList.add('active');
+                document.getElementById('login-subtitle').innerText = 'Access your DSA / Partner dashboard';
+                document.getElementById('login-id-label').innerText = 'Partner Email or DSA Code';
+                document.getElementById('register-subtitle').innerText = 'Apply to become a DSA Partner';
+                document.getElementById('customer-only-fields').style.display = 'none'; // Puthusa add pannathu!
+            }
+        }
+
+        // 🟢 VIEW SWITCHING LOGIC
+        window.switchView = function(viewId) {
+            const views = document.querySelectorAll('.form-view');
+            const loginTabs = document.getElementById('login-tabs');
+            
+            gsap.to(views, { opacity: 0, duration: 0.2, onComplete: () => {
+                views.forEach(v => v.classList.remove('active'));
+                if(viewId === 'view-register') loginTabs.style.display = 'none'; 
+                else loginTabs.style.display = 'flex';
+                
+                const targetView = document.getElementById(viewId);
+                targetView.classList.add('active');
+                gsap.fromTo(targetView, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" });
+            }});
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastMsg');
+            document.getElementById('toastText').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ==========================================
+        // 🚀 API INTEGRATION (THE REAL MAGIC) 🚀
+        // ==========================================
+
+        // 1. REAL LOGIN LOGIC
+        document.getElementById('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login');
+            btn.classList.add('btn-loading');
+
+            const login_id = document.getElementById('login-id').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        login_id: login_id, 
+                        password: password, 
+                        type: currentLoginType 
+                    })
+                });
+                
+                const data = await response.json();
+                btn.classList.remove('btn-loading');
+
+                if(data.success) {
+                    showToast(data.message);
+                    setTimeout(() => window.location.href = data.redirect, 1000);
+                } else {
+                    showToast(data.message);
+                }
+            } catch (error) {
+                btn.classList.remove('btn-loading');
+                showToast("Server Error! Check Python Console.");
+            }
+        });
+        
+        document.getElementById('formRegister').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-register');
+    btn.classList.add('btn-loading');
+
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = document.getElementById('reg-phone').value;
+    const password = document.getElementById('reg-password').value;
+
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                name: name, email: email, phone: phone, password: password, 
+                type: currentLoginType // 'Customer' or 'Partner'
+            })
+        });
+        
+        const data = await response.json();
+        btn.classList.remove('btn-loading');
+
+        if(data.success) {
+            e.target.reset();
+            switchView('view-login');
+            showToast(data.message);
+        } else {
+            showToast(data.message);
+        }
+    } catch (error) {
+        btn.classList.remove('btn-loading');
+        showToast("Server Error!");
+    }
+});
+    </script>
+</body>
+</html>

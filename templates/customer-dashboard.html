@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Customer Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root { 
+            --bg-main: #f8fafc; --text-dark: #0f172a; --text-muted: #475569; 
+            --color-blue: #2563eb; --color-cyan: #06b6d4; --color-purple: #8b5cf6; 
+            --color-green: #10b981; --color-rose: #f43f5e;
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none;}
+        body { background-color: var(--bg-main); color: var(--text-dark); min-height: 100vh; overflow-x: hidden; }
+        a, button, select, input { cursor: pointer !important; }
+        input[type="text"], input[type="number"] { cursor: text !important; }
+
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998; transition: width 0.2s, height 0.2s, border-color 0.2s; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); }
+        body.typing-mode .cursor-dot, body.typing-mode .cursor-outline { display: none !important; }
+
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); overflow: hidden; pointer-events: none; }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-pink); animation-delay: -5s; }
+
+        .navbar { width: 100%; height: 85px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; position: fixed; top: 0; z-index: 100; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 32px; }
+        .custom-logo { height: 40px; }
+        .logout-btn { color: var(--color-rose); font-weight: 700; border: 2px solid #fecdd3; background: #fff1f2; padding: 10px 24px; border-radius: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none;}
+        .logout-btn:hover { background: var(--color-rose); color: white; border-color: var(--color-rose); transform: translateY(-2px); }
+
+        .container { max-width: 1200px; margin: 130px auto 80px; padding: 0 24px; position: relative; z-index: 1; }
+        .welcome-header { margin-bottom: 40px; }
+        .welcome-header h1 { font-size: 42px; font-weight: 800; color: var(--text-dark); letter-spacing: -1px; }
+        .welcome-header p { color: var(--text-muted); font-size: 18px; font-weight: 500; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-radius: 32px; padding: 40px; box-shadow: var(--shadow-soft); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+        
+        .card-title { font-size: 20px; font-weight: 800; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; color: var(--text-dark); }
+        .card-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; }
+
+        .app-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group.full-width { grid-column: span 2; }
+        .input-group label { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+        .input-group input, .input-group select { width: 100%; padding: 16px 20px; font-size: 15px; font-weight: 600; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; outline: none; transition: 0.3s; color: var(--text-dark); }
+        .input-group input:focus, .input-group select:focus { border-color: var(--color-blue); background: white; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+        
+        .btn-submit { width: 100%; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 800; border: none; color: white; background: linear-gradient(135deg, var(--color-blue), var(--color-cyan)); box-shadow: 0 10px 20px rgba(37,99,235,0.2); transition: 0.3s; margin-top: 10px;}
+        .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(37,99,235,0.3); }
+
+        .loan-amount-display { font-size: 48px; font-weight: 800; background: linear-gradient(to right, var(--color-green), var(--color-teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1; margin-bottom: 5px; }
+        .loan-product-tag { display: inline-block; padding: 6px 16px; background: #eff6ff; color: var(--color-blue); border-radius: 20px; font-weight: 800; font-size: 14px; margin-bottom: 30px; border: 1px solid #bfdbfe; }
+        
+        .detail-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px dashed #e2e8f0; font-weight: 600; font-size: 15px; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-lbl { color: var(--text-muted); }
+        .detail-val { color: var(--text-dark); font-weight: 800; }
+
+        .tracker { display: flex; flex-direction: column; gap: 30px; position: relative; padding-left: 10px; }
+        .tracker::before { content: ''; position: absolute; left: 34px; top: 10px; bottom: 10px; width: 3px; background: #e2e8f0; z-index: 1; border-radius: 3px; }
+        .tracker-fill { position: absolute; left: 34px; top: 10px; width: 3px; background: linear-gradient(to bottom, var(--color-blue), var(--color-cyan)); z-index: 2; transition: height 1.5s var(--smooth); border-radius: 3px; }
+
+        .tracker.sanctioned .tracker-fill { height: 66%; }
+        .tracker.disbursed .tracker-fill { height: 100%; background: linear-gradient(to bottom, var(--color-blue), var(--color-green)); }
+        .tracker.pending .tracker-fill { height: 33%; }
+        .tracker.rejected .tracker-fill { height: 100%; background: var(--color-rose); }
+
+        .step { display: flex; gap: 25px; position: relative; z-index: 3; align-items: flex-start; opacity: 0.4; transition: 0.3s; }
+        .step.completed, .step.active { opacity: 1; }
+        
+        .step-icon { width: 50px; height: 50px; background: white; border: 4px solid #e2e8f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: 800; font-size: 20px; flex-shrink: 0; transition: 0.3s; }
+        .step.completed .step-icon { background: var(--color-blue); border-color: var(--color-blue); color: white; box-shadow: 0 5px 15px rgba(37,99,235,0.3); }
+        .step.active .step-icon { border-color: var(--color-blue); color: var(--color-blue); box-shadow: 0 0 0 6px rgba(37,99,235,0.15); }
+        .tracker.disbursed .step.completed .step-icon { background: var(--color-green); border-color: var(--color-green); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .tracker.rejected .step.active .step-icon { border-color: var(--color-rose); color: var(--color-rose); box-shadow: 0 0 0 6px rgba(244,63,94,0.15); }
+
+        .step-content { padding-top: 10px; }
+        .step-content h4 { font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 5px; }
+        .step-content p { font-size: 14px; color: var(--text-muted); font-weight: 500; line-height: 1.5; }
+        
+        .vault-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-alt); border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 15px; transition: 0.3s; }
+        .vault-item:hover { transform: translateX(5px); border-color: var(--color-blue); background: white; box-shadow: var(--shadow-soft); }
+        .doc-left { display: flex; align-items: center; gap: 15px; }
+        .doc-icon-small { width: 40px; height: 40px; border-radius: 12px; background: #eff6ff; color: var(--color-blue); display: flex; align-items: center; justify-content: center; }
+        .doc-name { font-weight: 700; font-size: 15px; color: var(--text-dark); }
+        .doc-status { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
+        .status-verified { background: #d1fae5; color: #059669; }
+        .status-pending { background: #fef3c7; color: #d97706; }
+
+        .action-box { margin-top: 15px; padding: 15px 20px; background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 16px; display: inline-block; transition: 0.3s; cursor: pointer;}
+        .action-box:hover { background: #dbeafe; transform: translateY(-2px); }
+        .action-box a { color: var(--color-blue); font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; text-decoration: none;}
+
+        /* 🟢 AI PROCESSING UI 🟢 */
+        .ai-processing-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s; text-align: center; }
+        .ai-processing-overlay.active { opacity: 1; visibility: visible; }
+        
+        .ai-spinner { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #e2e8f0; border-top-color: var(--color-purple); border-right-color: var(--color-cyan); animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .ai-text { font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px; }
+        .ai-subtext { font-size: 16px; color: var(--color-blue); font-weight: 600; font-family: monospace; }
+        
+        /* 🟢 AI SUCCESS RESULT 🟢 */
+        .ai-result-box { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 2px solid var(--color-green); text-align: center; transform: scale(0.9); transition: 0.4s var(--spring); opacity: 0; visibility: hidden; position: absolute; z-index: 51; }
+        .ai-result-box.active { transform: scale(1); opacity: 1; visibility: visible; }
+        .cibil-score { font-size: 56px; font-weight: 800; color: var(--color-green); line-height: 1; margin: 15px 0; }
+        
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .app-form-grid { grid-template-columns: 1fr; }
+            .input-group.full-width { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/"><img src="logo" alt="Smart Choice" class="custom-logo hover-target"></a>
+            <a href="/logout" class="logout-btn hover-target">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-header gsap-anim">
+            <h1>Welcome back, {{ lead.customer_name }} 👋</h1>
+            <p>Manage your application, track progress, and securely access your vault.</p>
+        </div>
+
+        {% if lead.amount == 0 %}
+        <div class="glass-card gsap-anim" style="max-width: 800px; margin: 0 auto;">
+            <div class="card-title">
+                <div class="card-icon" style="background: var(--color-blue);"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                Complete Your Profile
+            </div>
+            
+            <form id="loanApplyForm">
+                <div class="app-form-grid">
+                    <div class="input-group full-width">
+                        <label>Select Loan Product</label>
+                        <select id="app-product" required class="hover-target">
+                            <option value="">Select your requirement...</option>
+                            <option value="Home Purchase Loan" {% if lead.product == 'Home Purchase' %}selected{% endif %}>Home Purchase Loan</option>
+                            <option value="Construction Loan">Construction Loan</option>
+                            <option value="Balance Transfer">Balance Transfer</option>
+                            <option value="Plot Purchase">Plot Purchase Loan</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Required Loan Amount (₹)</label>
+                        <input type="number" id="app-amount" placeholder="e.g. 5000000" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Property Location / City</label>
+                        <input type="text" id="app-city" placeholder="e.g. Bangalore" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Employment Type</label>
+                        <select id="app-emp" required class="hover-target">
+                            <option value="Salaried">Salaried Professional</option>
+                            <option value="Business">Self-Employed / Business</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Net Monthly Income (₹)</label>
+                        <input type="number" id="app-income" placeholder="e.g. 150000" required>
+                    </div>
+                    <div class="input-group full-width" style="margin-top: 20px;">
+                        <button type="submit" class="btn-submit hover-target" id="btn-submit-app">Save Details ➔</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="dashboard-grid">
+            
+            <div class="glass-card gsap-anim" style="position: relative;">
+                
+                <div class="ai-processing-overlay" id="aiProcessing">
+                    <div class="ai-spinner"></div>
+                    <div class="ai-text">AI Engine Running</div>
+                    <div class="ai-subtext" id="aiLogText">> Establishing secure connection...</div>
+                </div>
+
+                <div class="ai-result-box" id="aiResult">
+                    <div style="font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Live CIBIL Fetched</div>
+                    <div class="cibil-score" id="finalCibil">780</div>
+                    <p style="font-weight: 800; font-size: 20px; color: var(--text-dark); margin-bottom: 10px;" id="finalDecision">Loan Sanctioned!</p>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;" id="finalRemarks">Auto-Approved: Excellent Profile</p>
+                    <button class="btn-submit hover-target" onclick="window.location.reload()">View Dashboard</button>
+                </div>
+
+                <div class="card-title">
+                    <div class="card-icon" style="background: var(--color-blue);"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                    Live Application Status
+                </div>
+
+                <div class="tracker {{ lead.status | lower }}">
+                    <div class="tracker-fill"></div> 
+                    
+                    <div class="step completed">
+                        <div class="step-icon">✓</div>
+                        <div class="step-content">
+                            <h4>Application Submitted</h4>
+                            <p>Your details have been securely logged.</p>
+                        </div>
+                    </div>
+
+                    {% if lead.status == 'Rejected' %}
+                        <div class="step active">
+                            <div class="step-icon">✕</div>
+                            <div class="step-content">
+                                <h4 style="color: var(--color-rose);">Application Declined</h4>
+                                <p>{{ lead.ai_remarks }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="step {% if lead.status == 'Pending' %}active{% else %}completed{% endif %}">
+                            <div class="step-icon">{% if lead.status != 'Pending' %}✓{% else %}2{% endif %}</div>
+                            <div class="step-content">
+                                <h4>Underwriting & KYC</h4>
+                                
+                                {% if lead.status == 'Pending' %}
+                                    {% if not (lead.aadhaar_uploaded and lead.pan_uploaded and lead.bank_uploaded) %}
+                                        <p>Please complete your document upload.</p>
+                                        <div class="action-box hover-target" onclick="window.location.href='/upload-kyc.html'">
+                                            <a><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Upload Pending Documents</a>
+                                        </div>
+                                    {% else %}
+                                        <p>Documents verified! Ready for Instant Approval.</p>
+                                        <button class="btn-submit hover-target" style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, var(--color-purple), var(--color-pink));" onclick="runAIEngine()">
+                                            ⚡ Run Auto-Approval AI
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <p>AI Underwriting successful.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="step {% if lead.status == 'Sanctioned' %}active{% elif lead.status == 'Disbursed' %}completed{% endif %}">
+                            <div class="step-icon">{% if lead.status == 'Disbursed' %}✓{% else %}3{% endif %}</div>
+                            <div class="step-content">
+                                <h4>Loan Sanctioned</h4>
+                                {% if lead.status == 'Sanctioned' %}
+                                    <p style="color: var(--color-green); font-weight: 700;">{{ lead.ai_remarks }}</p>
+                                {% else %}
+                                    <p>Congratulations! Loan approved.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="step {% if lead.status == 'Disbursed' %}completed{% endif %}">
+                            <div class="step-icon">{% if lead.status == 'Disbursed' %}✓{% else %}4{% endif %}</div>
+                            <div class="step-content">
+                                <h4>Final Disbursal</h4>
+                                <p>Funds successfully transferred to your account!</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                
+                <div class="glass-card gsap-anim" style="padding: 30px;">
+                    <div class="loan-product-tag">{{ lead.product }}</div>
+                    <div class="loan-amount-display">{{ amount }}</div>
+                    <p style="color: var(--text-muted); font-size: 14px; font-weight: 700; margin-bottom: 25px; text-transform: uppercase;">Requested Amount</p>
+                    
+                    <div class="detail-row">
+                        <span class="detail-lbl">Application ID</span>
+                        <span class="detail-val" style="color: var(--color-blue);">APP-{{ lead.id }}</span>
+                    </div>
+                    {% if lead.cibil_score > 0 %}
+                    <div class="detail-row">
+                        <span class="detail-lbl">CIBIL Score</span>
+                        <span class="detail-val" style="color: var(--color-purple);">{{ lead.cibil_score }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-lbl">Applicant</span>
+                        <span class="detail-val">{{ lead.customer_name }}</span>
+                    </div>
+                </div>
+
+                <div class="glass-card gsap-anim" style="padding: 30px;">
+                    <div class="card-title" style="margin-bottom: 20px;">
+                        <div class="card-icon" style="background: var(--color-purple);"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
+                        Smart Vault
+                    </div>
+                    
+                    <div class="vault-item hover-target">
+                        <div class="doc-left">
+                            <div class="doc-icon-small"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg></div>
+                            <span class="doc-name">Aadhaar Card</span>
+                        </div>
+                        <span class="doc-status {% if lead.aadhaar_uploaded %}status-verified{% else %}status-pending{% endif %}">
+                            {% if lead.aadhaar_uploaded %}Verified ✓{% else %}Awaiting{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="vault-item hover-target">
+                        <div class="doc-left">
+                            <div class="doc-icon-small" style="color: var(--color-pink); background: #fdf2f8;"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div>
+                            <span class="doc-name">PAN Card</span>
+                        </div>
+                        <span class="doc-status {% if lead.pan_uploaded %}status-verified{% else %}status-pending{% endif %}">
+                            {% if lead.pan_uploaded %}Verified ✓{% else %}Awaiting{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="vault-item hover-target">
+                        <div class="doc-left">
+                            <div class="doc-icon-small" style="color: var(--color-orange); background: #fff7ed;"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                            <span class="doc-name">Bank Statement</span>
+                        </div>
+                        <span class="doc-status {% if lead.bank_uploaded %}status-verified{% else %}status-pending{% endif %}">
+                            {% if lead.bank_uploaded %}Verified ✓{% else %}Awaiting{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof gsap !== 'undefined') {
+                gsap.fromTo('.gsap-anim', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.2, ease: "power3.out" });
+            }
+
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+            }
+        });
+
+        // Form Submit
+        const appForm = document.getElementById('loanApplyForm');
+        if(appForm) {
+            appForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btn-submit-app');
+                btn.innerHTML = "Processing..."; btn.style.pointerEvents = "none";
+
+                // 🟢 PUTHUSA: INCOME & EMP data send pandrom 🟢
+                const product = document.getElementById('app-product').value;
+                const amount = document.getElementById('app-amount').value;
+                const emp = document.getElementById('app-emp').value;
+                const income = document.getElementById('app-income').value;
+
+                try {
+                    const response = await fetch('/api/submit_application', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product, amount, emp, income })
+                    });
+                    const data = await response.json();
+                    if(data.success) {
+                        btn.innerHTML = "Saved! ✓"; btn.style.background = "var(--color-green)";
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else { alert(data.message); btn.innerHTML = "Try Again"; btn.style.pointerEvents = "auto"; }
+                } catch(error) { alert("Server Error!"); }
+            });
+        }
+
+        // 🟢 RUN AI ENGINE LOGIC (THE MAGIC) 🟢
+        window.runAIEngine = async function() {
+            const overlay = document.getElementById('aiProcessing');
+            const logText = document.getElementById('aiLogText');
+            const resultBox = document.getElementById('aiResult');
+            
+            overlay.classList.add('active'); // Show hacker screen
+            
+            // Step 1: Fake logs for visual effect
+            setTimeout(() => logText.innerText = "> Fetching CIBIL Bureau Records...", 800);
+            setTimeout(() => logText.innerText = "> Analyzing Income & Bank Statements...", 1800);
+            setTimeout(() => logText.innerText = "> Calculating FOIR & Risk...", 2800);
+            
+            try {
+                // Real API Call to Python
+                const response = await fetch('/api/run_ai_engine', { method: 'POST' });
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    if(data.success) {
+                        // Populate Result Box
+                        document.getElementById('finalCibil').innerText = data.cibil;
+                        document.getElementById('finalRemarks').innerText = data.remarks;
+                        
+                        if(data.status === 'Rejected') {
+                            document.getElementById('finalCibil').style.color = 'var(--color-rose)';
+                            document.getElementById('finalDecision').innerText = 'Application Declined';
+                            resultBox.style.borderColor = 'var(--color-rose)';
+                        }
+                        
+                        resultBox.classList.add('active');
+                    } else {
+                        alert("AI Engine Error!");
+                    }
+                }, 3800);
+
+            } catch (error) {
+                alert("Connection lost to AI Server!");
+                overlay.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

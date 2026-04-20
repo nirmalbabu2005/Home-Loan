@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Pre-Approved Properties</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* === VIBRANT LIGHT THEME VARIABLES === */
+        :root { 
+            --bg-main: #ffffff; 
+            --bg-alt: #f8fafc;
+            --text-dark: #0f172a; 
+            --text-muted: #475569; 
+            
+            /* Multi-Color Palette */
+            --color-blue: #2563eb; 
+            --color-cyan: #06b6d4; 
+            --color-purple: #8b5cf6;
+            --color-pink: #ec4899;
+            --color-orange: #f97316;
+            --color-green: #10b981;
+            --color-teal: #14b8a6;
+            --color-rose: #f43f5e;
+
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none; }
+        html { scroll-behavior: smooth; } 
+        body { background-color: var(--bg-main); color: var(--text-dark); overflow-x: hidden; line-height: 1.6; } 
+        a, button, details summary { cursor: none; } 
+        
+        /* 🟢 NATIVE CURSOR FOR INPUTS */
+        input, select, textarea { cursor: text !important; }
+        input[type=range]::-webkit-slider-thumb { cursor: pointer !important; }
+        
+        ul { list-style: none; }
+        ::-webkit-scrollbar { display: none; }
+
+        /* Lenis Smooth Scroll Rules */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+
+        /* === PRELOADER === */
+        #preloader { position: fixed; inset: 0; background: var(--bg-main); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease, visibility 0.8s; }
+        .loader-ring { width: 60px; height: 60px; border: 4px solid #e2e8f0; border-top-color: var(--color-pink); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* === CUSTOM MOUSE CURSOR === */
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999 !important; transition: width 0.2s, height 0.2s; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998 !important; transition: width 0.2s, height 0.2s, border-color 0.2s; transition-duration: 150ms; transition-timing-function: ease-out; }
+        body.hovering .cursor-dot { width: 0; height: 0; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); backdrop-filter: blur(2px); }
+        body.typing-mode .cursor-dot, body.typing-mode .cursor-outline { display: none !important; }
+
+        /* === DYNAMIC MESH BACKGROUND === */
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); overflow: hidden; pointer-events: none; }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-pink); animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: var(--color-orange); animation-delay: -10s; }
+        @keyframes floatMesh { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10vw, 15vh) scale(1.2); } 100% { transform: translate(-10vw, 5vh) scale(0.8); } }
+        
+        #canvas-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+
+        /* === ANIMATIONS === */
+        .reveal { opacity: 0; transform: translateY(60px); transition: all 1s var(--smooth); filter: blur(5px); }
+        .reveal.active { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .delay-1 { transition-delay: 0.1s; } .delay-2 { transition-delay: 0.2s; }
+        @keyframes pulse-glow { 0% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.5; } }
+
+        /* === LAYOUT UTILS === */
+        .container { max-width: 1320px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+        .section-padding { padding: 120px 0; position: relative; }
+        .section-header { text-align: center; margin-bottom: 70px; }
+        .section-header h2 { font-size: 56px; font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; color: var(--text-dark); }
+        .section-header p { font-size: 18px; color: var(--text-muted); max-width: 700px; margin: 0 auto; font-weight: 500; }
+        
+        .text-gradient-blue { background: linear-gradient(to right, var(--color-blue), var(--color-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .btn { padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; color: white; background: var(--text-dark); box-shadow: var(--shadow-soft); }
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: var(--color-blue); }
+        .btn-gradient { background: linear-gradient(135deg, var(--color-blue), var(--color-cyan)); color: white; }
+        
+        .btn-outline { background: white; border: 2px solid #e2e8f0; color: var(--text-dark); display: inline-block; padding: 12px 28px; border-radius: 12px; font-weight: 700; transition: 0.3s; }
+        .btn-outline:hover { background: var(--bg-alt); border-color: var(--color-pink); color: var(--color-pink); transform: translateY(-3px); box-shadow: var(--shadow-soft); }
+        .magnetic-wrap { display: inline-block; }
+        .magnetic-wrap-nav { display: inline-block; }
+
+        /* === STICKY NAVBAR === */
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 85px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); z-index: 100; display: flex; align-items: center; transition: all 0.4s; }
+        .navbar.scrolled { background: rgba(255, 255, 255, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: 75px; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+        .custom-logo { height: 40px; transition: 0.5s; cursor: none; }
+        .nav-links { display: flex; gap: 36px; align-items: center; position: absolute; left: 50%; transform: translateX(-50%); }
+        .nav-links a { font-size: 15px; font-weight: 700; color: var(--text-muted); transition: 0.3s; position: relative; padding-bottom: 5px; text-decoration: none;}
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 3px; bottom: -5px; left: 50%; background: var(--color-purple); transition: 0.3s var(--smooth); transform: translateX(-50%); border-radius: 5px; }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-purple); } .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+
+        /* === 🌟 EXPANDING FAB MENU === */
+        .fab-container { position: fixed; bottom: 40px; right: 40px; z-index: 999; display: flex; flex-direction: column-reverse; align-items: center; gap: 15px; }
+        .fab-btn { width: 65px; height: 65px; background: linear-gradient(135deg, var(--color-orange), var(--color-pink)); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); cursor: none; transition: 0.3s var(--spring); z-index: 10; position: relative; }
+        .fab-btn:hover { transform: scale(1.1); }
+        .fab-menu { display: flex; flex-direction: column; gap: 15px; position: absolute; bottom: 80px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: 0.4s var(--spring); }
+        .fab-container:hover .fab-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .fab-item { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.3s; position: relative; border: 1px solid #e2e8f0; }
+        .fab-item:hover { transform: scale(1.1); background: var(--color-blue); color: white; border-color: var(--color-blue); }
+        .fab-item::after { content: attr(data-tooltip); position: absolute; right: 65px; background: var(--text-dark); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; opacity: 0; transform: translateX(10px); transition: 0.3s; pointer-events: none; }
+        .fab-item:hover::after { opacity: 1; transform: translateX(0); }
+
+        /* === PAGE HEADER === */
+        .page-header { padding: 180px 0 60px; text-align: center; }
+        .page-title { font-size: 64px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -2px; color: var(--text-dark); }
+        .page-desc { font-size: 20px; color: var(--text-muted); max-width: 800px; margin: 0 auto; font-weight: 500; }
+
+        /* === PROPERTY SHOWCASE LAYOUT === */
+        .property-showcase { margin-bottom: 120px; position: relative; }
+        .showcase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .showcase-grid.reverse { direction: rtl; }
+        .showcase-grid.reverse > * { direction: ltr; }
+        
+        .showcase-img-wrap { position: relative; border-radius: 32px; overflow: hidden; height: 500px; box-shadow: var(--shadow-soft); }
+        .showcase-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--smooth); }
+        .showcase-img-wrap:hover .showcase-img { transform: scale(1.05); }
+        
+        .prop-tag-floating { position: absolute; top: 24px; left: 24px; background: var(--color-green); color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 800; box-shadow: 0 10px 20px rgba(16,185,129,0.3); z-index: 2; }
+        .showcase-grid.reverse .prop-tag-floating { left: auto; right: 24px; }
+
+        .showcase-content { padding: 20px 0; }
+        .builder-badge { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; color: var(--color-blue); background: #eff6ff; padding: 8px 16px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #bfdbfe; }
+        .builder-badge .b-logo { width: 24px; height: 24px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+        
+        .prop-name { font-size: 42px; font-weight: 800; margin-bottom: 10px; line-height: 1.1; color: var(--text-dark); }
+        .prop-loc { font-size: 18px; color: var(--text-muted); font-weight: 600; margin-bottom: 25px; display: flex; align-items: center; gap: 8px; }
+        
+        .prop-desc { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; line-height: 1.8; }
+        
+        .amenity-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+        .chip { background: white; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        
+        .prop-actions { display: flex; align-items: center; gap: 30px; border-top: 1px solid #e2e8f0; padding-top: 30px; }
+        .prop-price { font-size: 32px; font-weight: 800; color: var(--text-dark); }
+        .prop-price span { display: block; font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+        /* Color Variations for Builders */
+        .builder-dlf { color: var(--color-purple); background: #faf5ff; border-color: #e9d5ff; }
+        .builder-dlf .b-logo { color: var(--color-purple); }
+        .builder-godrej { color: var(--color-orange); background: #fff7ed; border-color: #ffedd5; }
+        .builder-godrej .b-logo { color: var(--color-orange); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .showcase-grid { grid-template-columns: 1fr; gap: 40px; }
+            .showcase-grid.reverse { direction: ltr; }
+            .showcase-img-wrap { height: 350px; }
+            .prop-actions { flex-direction: column; align-items: flex-start; gap: 20px; }
+        }
+
+        /* === FOOTER === */
+        .footer { background: white; padding: 80px 0 40px; position: relative; overflow: hidden; margin-top: 60px; border-top: 1px solid #e2e8f0; }
+        .footer-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(circle, rgba(37,99,235,0.05) 0%, transparent 70%); pointer-events: none; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 60px; margin-bottom: 60px; position: relative; z-index: 10; }
+        .footer-brand p { color: var(--text-muted); font-size: 16px; margin: 20px 0; max-width: 350px; font-weight: 500; }
+        .social-links { display: flex; gap: 16px; margin-top: 20px;}
+        .social-links a { width: 48px; height: 48px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: all 0.3s; }
+        .social-links a:hover { background: var(--color-blue); color: white; border-color: var(--color-blue); transform: translateY(-5px); box-shadow: var(--shadow-glow); }
+        .footer h4 { font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 30px; letter-spacing: 1px; color: var(--text-dark); }
+        .footer-links li { margin-bottom: 18px; } .footer-links a { color: var(--text-muted); transition: 0.3s; font-weight: 600; text-decoration: none;}
+        .footer-links a:hover { color: var(--color-blue); transform: translateX(8px); display: inline-block; }
+        .footer-bottom { border-top: 1px solid #e2e8f0; padding-top: 30px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-muted); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="preloader"><div class="loader-ring"></div></div>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-content">
+            <div class="magnetic-wrap-nav"><a href="/"><img src="/static/Companylogo1.png" alt="Smart Choice" class="custom-logo magnetic-btn hover-target"></a></div>
+            <div class="nav-links">
+                <div class="magnetic-wrap-nav"><a href="/#home" class="magnetic-btn hover-target">Platform</a></div>
+                <div class="magnetic-wrap-nav"><a href="/properties.html" class="active magnetic-btn hover-target">Properties</a></div>
+                <div class="magnetic-wrap-nav"><a href="/loans-details.html" class="magnetic-btn hover-target">Loans</a></div>
+                <div class="magnetic-wrap-nav"><a href="/credit-score.html" class="magnetic-btn hover-target">Credit Score</a></div>
+            </div>   
+            <div class="magnetic-wrap-nav" style="margin-left: auto;">
+                {% if user_status.logged_in %}
+                    <button class="btn btn-gradient magnetic-btn hover-target" onclick="window.location.href='{{ user_status.dashboard }}'">My Dashboard ➔</button>
+                {% else %}
+                    <button class="btn btn-outline magnetic-btn hover-target" onclick="window.location.href='/login.html'">Login / Apply</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section class="page-header container">
+        <h1 class="page-title gsap-reveal">Pre-Approved <span class="text-gradient-blue">Properties</span></h1>
+        <p class="page-desc gsap-reveal" data-delay="0.1">Discover our exclusive list of Tier-1 builder properties. Get your loan sanctioned instantly with zero valuation & legal hassles.</p>
+    </section>
+
+    <section class="property-showcase container">
+        <div class="showcase-grid">
+            <div class="showcase-img-wrap gsap-reveal hover-target">
+                <div class="prop-tag-floating">⚡ Instant Approval</div>
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80" alt="Prestige Lakeside" class="showcase-img">
+            </div>
+            <div class="showcase-content gsap-reveal" data-delay="0.2">
+                <div class="builder-badge">
+                    <div class="b-logo">P</div> Prestige Group
+                </div>
+                <h2 class="prop-name">Prestige Lakeside Habitat</h2>
+                <div class="prop-loc">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Whitefield, Bangalore
+                </div>
+                <p class="prop-desc">A sprawling luxury enclave overlooking the scenic Varthur Lake. Spanning 102 acres, it features 3,426 luxury apartments and 271 independent villas set in a Disney-themed magical landscape.</p>
+                
+                <div class="amenity-chips">
+                    <div class="chip">🌊 Lake View</div>
+                    <div class="chip">🎡 Disney Theme</div>
+                    <div class="chip">🏊‍♀️ Olympic Pool</div>
+                    <div class="chip">🛡️ 24/7 Security</div>
+                </div>
+
+                <div class="prop-actions">
+                    <div class="prop-price">
+                        <span>Starting Price</span>
+                        ₹1.20 Cr
+                    </div>
+                    <div class="magnetic-wrap">
+                        <button class="btn btn-gradient magnetic hover-target" onclick="window.location.href='/login.html?product=Prestige Lakeside Habitat&register=true'">Apply for Loan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="property-showcase container">
+        <div class="showcase-grid reverse">
+            <div class="showcase-img-wrap gsap-reveal hover-target">
+                <div class="prop-tag-floating" style="background: var(--color-purple);">⚡ Instant Approval</div>
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80" alt="DLF Cyber City" class="showcase-img">
+            </div>
+            <div class="showcase-content gsap-reveal" data-delay="0.2">
+                <div class="builder-badge builder-dlf">
+                    <div class="b-logo">D</div> DLF Properties
+                </div>
+                <h2 class="prop-name">DLF Cyber City Villas</h2>
+                <div class="prop-loc">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Gurgaon, Delhi NCR
+                </div>
+                <p class="prop-desc">Ultra-luxury smart homes situated in the heart of Gurgaon's tech hub. Features state-of-the-art home automation, private infinity pools, and exclusive access to the Cyber Hub club.</p>
+                
+                <div class="amenity-chips">
+                    <div class="chip">🤖 Smart Home</div>
+                    <div class="chip">🏊‍♂️ Private Pool</div>
+                    <div class="chip">⛳ Golf Course</div>
+                    <div class="chip">🚁 Helipad</div>
+                </div>
+
+                <div class="prop-actions">
+                    <div class="prop-price">
+                        <span>Starting Price</span>
+                        ₹3.50 Cr
+                    </div>
+                    <div class="magnetic-wrap">
+                        <button class="btn btn-gradient magnetic hover-target" style="background: linear-gradient(135deg, var(--color-purple), var(--color-pink));" onclick="window.location.href='/login.html?product=DLF Cyber City Villas&register=true'">Apply for Loan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="property-showcase container" style="margin-bottom: 80px;">
+        <div class="showcase-grid">
+            <div class="showcase-img-wrap gsap-reveal hover-target">
+                <div class="prop-tag-floating" style="background: var(--color-orange);">⚡ Instant Approval</div>
+                <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80" alt="Godrej Emerald" class="showcase-img">
+            </div>
+            <div class="showcase-content gsap-reveal" data-delay="0.2">
+                <div class="builder-badge builder-godrej">
+                    <div class="b-logo">G</div> Godrej Properties
+                </div>
+                <h2 class="prop-name">Godrej Emerald</h2>
+                <div class="prop-loc">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Thane, Mumbai
+                </div>
+                <p class="prop-desc">Experience nature-inspired living with 80% open green spaces. Godrej Emerald offers panoramic views of the Yeoor Hills, featuring a forest-themed clubhouse and sustainable architecture.</p>
+                
+                <div class="amenity-chips">
+                    <div class="chip">🌲 80% Greenery</div>
+                    <div class="chip">⛰️ Hill View</div>
+                    <div class="chip">🧘 Yoga Deck</div>
+                    <div class="chip">♻️ Eco-Friendly</div>
+                </div>
+
+                <div class="prop-actions">
+                    <div class="prop-price">
+                        <span>Starting Price</span>
+                        ₹95.0 Lakhs
+                    </div>
+                    <div class="magnetic-wrap">
+                        <button class="btn btn-gradient magnetic hover-target" style="background: linear-gradient(135deg, var(--color-orange), var(--color-rose));" onclick="window.location.href='/login.html?product=Godrej Emerald&register=true'">Apply for Loan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-glow-1"></div><div class="footer-glow-2"></div>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="gsap-reveal">
+                    <img src="/static/Companylogo1.png" alt="Company IT Park" class="custom-logo hover-target" style="margin-bottom: 20px;">
+                    <p>Empowering the next generation of tech giants at Company IT Park. Built for creators, by creators.</p>
+                </div>
+                <div class="gsap-reveal" data-delay="0.1">
+                    <h4>Platform</h4>
+                    <ul class="footer-links">
+                        <li><a href="/#infrastructure" class="hover-target">Loan Origination</a></li>
+                        <li><a href="/login.html" class="hover-target">Customer Portal</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.2">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="hover-target">About Company</a></li>
+                        <li><a href="/login.html" class="hover-target">Bank Partnerships</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.3">
+                    <h4>Contact Us</h4>
+                    <div class="contact-box hover-target magnetic-wrap">
+                        <div class="magnetic">
+                            <p style="color:var(--text-muted); margin-bottom:10px;"><svg width="20" height="20" fill="none" stroke="var(--color-blue)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> Sales</p>
+                            <a href="tel:+917338941579">(+91) 9876543210</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom gsap-reveal">
+                <div>&copy; 2026. All rights reserved. Built for modern finance.</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 800);
+            }, 800);
+
+            try {
+                if (typeof Lenis !== 'undefined') {
+                    const lenis = new Lenis({ duration: 1.2, smooth: true });
+                    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+                    requestAnimationFrame(raf);
+                    
+                    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                        lenis.on('scroll', ScrollTrigger.update);
+                        gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
+                        gsap.ticker.lagSmoothing(0);
+                    }
+                }
+            } catch (e) { }
+
+            try {
+                if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                    gsap.registerPlugin(ScrollTrigger);
+                    document.querySelectorAll('.gsap-reveal').forEach(el => {
+                        let delay = el.getAttribute('data-delay') || 0;
+                        gsap.fromTo(el, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: parseFloat(delay), scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" } });
+                    });
+                }
+            } catch (e) { }
+
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+                document.querySelectorAll('.hover-target, a, button').forEach(target => {
+                    target.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+                    target.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+                });
+            }
+
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height, particles = [];
+                const mouse = { x: -1000, y: -1000 };
+                const colors = ['#2563eb', '#ec4899', '#8b5cf6', '#10b981', '#f97316']; 
+
+                function initCanvas() {
+                    width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
+                    particles = [];
+                    for(let i = 0; i < 70; i++) { 
+                        particles.push({ 
+                            x: Math.random() * width, y: Math.random() * height, 
+                            vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, 
+                            size: Math.random() * 2 + 1,
+                            color: colors[Math.floor(Math.random() * colors.length)]
+                        }); 
+                    }
+                }
+                window.addEventListener('resize', initCanvas);
+                window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+                
+                function animateParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy;
+                        if(p.x < 0 || p.x > width) p.vx *= -1; if(p.y < 0 || p.y > height) p.vy *= -1;
+                        let dx = mouse.x - p.x; let dy = mouse.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 150) { p.x -= dx/30; p.y -= dy/30; }
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                    });
+                    requestAnimationFrame(animateParticles);
+                }
+                initCanvas(); animateParticles();
+            }
+
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); }, { passive: true });
+            
+            document.querySelectorAll('.magnetic').forEach(btn => {
+                btn.addEventListener('mousemove', (e) => {
+                    const rect = btn.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) * 0.4; 
+                    const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                    btn.style.transform = `translate(${x}px, ${y}px)`;
+                });
+                btn.addEventListener('mouseleave', () => { btn.style.transform = `translate(0px, 0px)`; });
+            });
+        });
+    </script>
+</body>
+</html>

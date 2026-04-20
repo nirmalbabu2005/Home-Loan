@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Vibrant Enterprise Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* === VIBRANT LIGHT THEME VARIABLES === */
+        :root { 
+            --bg-main: #ffffff; 
+            --bg-alt: #f8fafc;
+            --text-dark: #0f172a; 
+            --text-muted: #475569; 
+            
+            /* Multi-Color Palette */
+            --color-blue: #2563eb; 
+            --color-cyan: #06b6d4; 
+            --color-purple: #8b5cf6;
+            --color-pink: #ec4899;
+            --color-orange: #f97316;
+            --color-green: #10b981;
+            --color-teal: #14b8a6;
+            --color-rose: #f43f5e;
+
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none; }
+        html { scroll-behavior: smooth; } 
+        body { background-color: var(--bg-main); color: var(--text-dark); overflow-x: hidden; line-height: 1.6; } 
+        a, button, details summary { cursor: none; } 
+        
+        /* 🟢 NATIVE CURSOR FOR INPUTS */
+        input, select, textarea { cursor: text !important; }
+        input[type=range]::-webkit-slider-thumb { cursor: pointer !important; }
+        
+        ul { list-style: none; }
+        ::-webkit-scrollbar { display: none; }
+
+        /* Lenis Smooth Scroll Rules */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+
+        /* === PRELOADER === */
+        #preloader { position: fixed; inset: 0; background: var(--bg-main); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease, visibility 0.8s; }
+        .loader-ring { width: 60px; height: 60px; border: 4px solid #e2e8f0; border-top-color: var(--color-pink); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* === CUSTOM MOUSE CURSOR === */
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999 !important; transition: width 0.2s, height 0.2s; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998 !important; transition: width 0.2s, height 0.2s, border-color 0.2s; transition-duration: 150ms; transition-timing-function: ease-out; }
+        body.hovering .cursor-dot { width: 0; height: 0; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); backdrop-filter: blur(2px); }
+        body.typing-mode .cursor-dot, body.typing-mode .cursor-outline { display: none !important; }
+
+        /* === DYNAMIC MESH BACKGROUND === */
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); overflow: hidden; pointer-events: none; }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-pink); animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: var(--color-orange); animation-delay: -10s; }
+        @keyframes floatMesh { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10vw, 15vh) scale(1.2); } 100% { transform: translate(-10vw, 5vh) scale(0.8); } }
+        
+        #canvas-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+
+        /* === ANIMATIONS === */
+        .reveal { opacity: 0; transform: translateY(60px); transition: all 1s var(--smooth); filter: blur(5px); }
+        .reveal.active { opacity: 1; transform: translateY(0); filter: blur(0); }
+        .delay-1 { transition-delay: 0.1s; } .delay-2 { transition-delay: 0.2s; }
+        @keyframes pulse-glow { 0% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.5; } }
+
+        /* === LAYOUT UTILS === */
+        .container { max-width: 1320px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+        .section-padding { padding: 120px 0; position: relative; }
+        .section-header { text-align: center; margin-bottom: 70px; }
+        .section-header h2 { font-size: 56px; font-weight: 800; margin-bottom: 20px; letter-spacing: -1px; color: var(--text-dark); }
+        .section-header p { font-size: 18px; color: var(--text-muted); max-width: 700px; margin: 0 auto; font-weight: 500; }
+        
+        .text-gradient-blue { background: linear-gradient(to right, var(--color-blue), var(--color-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .btn { padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; color: white; background: var(--text-dark); box-shadow: var(--shadow-soft); text-decoration: none; cursor: pointer !important; }
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); background: var(--color-blue); }
+        .btn-gradient { background: linear-gradient(135deg, var(--color-blue), var(--color-cyan)); color: white; }
+        
+        .btn-outline { background: white; border: 2px solid #e2e8f0; color: var(--text-dark); display: inline-block; padding: 12px 28px; border-radius: 12px; font-weight: 700; transition: 0.3s; }
+        .btn-outline:hover { background: var(--bg-alt); border-color: var(--color-pink); color: var(--color-pink); transform: translateY(-3px); box-shadow: var(--shadow-soft); }
+        .magnetic-wrap { display: inline-block; }
+        .magnetic-wrap-nav { display: inline-block; }
+
+        /* NAVBAR */
+        .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 85px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); z-index: 100; display: flex; align-items: center; transition: all 0.4s; }
+        .navbar.scrolled { background: rgba(255, 255, 255, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: 75px; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+        .custom-logo { height: 40px; transition: 0.5s; cursor: none; }
+        .nav-links { display: flex; gap: 36px; align-items: center; position: absolute; left: 50%; transform: translateX(-50%); }
+        .nav-links a { font-size: 15px; font-weight: 700; color: var(--text-muted); transition: 0.3s; position: relative; padding-bottom: 5px; text-decoration: none; }
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 3px; bottom: -5px; left: 50%; background: var(--color-purple); transition: 0.3s var(--smooth); transform: translateX(-50%); border-radius: 5px; }
+        .nav-links a:hover, .nav-links a.active { color: var(--color-purple); } .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+
+        /* EXPANDING FAB MENU */
+        .fab-container { position: fixed; bottom: 40px; right: 40px; z-index: 999; display: flex; flex-direction: column-reverse; align-items: center; gap: 15px; }
+        .fab-btn { width: 65px; height: 65px; background: linear-gradient(135deg, var(--color-orange), var(--color-pink)); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); cursor: none; transition: 0.3s var(--spring); z-index: 10; position: relative; }
+        .fab-btn:hover { transform: scale(1.1); }
+        .fab-menu { display: flex; flex-direction: column; gap: 15px; position: absolute; bottom: 80px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: 0.4s var(--spring); }
+        .fab-container:hover .fab-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .fab-item { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.3s; position: relative; border: 1px solid #e2e8f0; }
+        .fab-item:hover { transform: scale(1.1); background: var(--color-blue); color: white; border-color: var(--color-blue); }
+        .fab-item::after { content: attr(data-tooltip); position: absolute; right: 65px; background: var(--text-dark); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; opacity: 0; transform: translateX(10px); transition: 0.3s; pointer-events: none; }
+        .fab-item:hover::after { opacity: 1; transform: translateX(0); }
+
+        /* HERO & CALCULATOR */
+        .hero { padding: 180px 0 100px; min-height: 100vh; display: flex; align-items: center; position: relative; }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 60px; align-items: center; }
+        .badge { display: inline-flex; align-items: center; gap: 10px; padding: 8px 20px; border-radius: 30px; background: #eff6ff; border: 1px solid #bfdbfe; color: var(--color-blue); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+        .pulse-dot { width: 10px; height: 10px; background: var(--color-blue); border-radius: 50%; box-shadow: 0 0 15px var(--color-blue); animation: pulse-glow 2s infinite; }
+        .hero-title { font-size: 78px; font-weight: 800; line-height: 1.05; margin-bottom: 30px; letter-spacing: -2px; }
+        .hero-desc { font-size: 20px; color: var(--text-muted); margin-bottom: 40px; line-height: 1.6; max-width: 90%; }
+        
+        .calc-wrapper { perspective: 1500px; }
+        .calc-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 32px; padding: 40px; box-shadow: var(--shadow-soft); transform-style: preserve-3d; position: relative; transition: transform 0.1s; }
+        
+        .calc-tabs { display: flex; background: #f8fafc; border-radius: 16px; padding: 6px; margin-bottom: 30px; transform: translateZ(20px); border: 1px solid #e2e8f0; }
+        .calc-tab { flex: 1; text-align: center; padding: 12px; font-weight: 700; font-size: 15px; border-radius: 12px; color: var(--text-muted); transition: 0.3s; }
+        .calc-tab:nth-child(1).active { background: var(--color-blue); color: white; box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
+        .calc-tab:nth-child(2).active { background: var(--color-purple); color: white; box-shadow: 0 4px 15px rgba(139,92,246,0.3); }
+        
+        .view-section { transition: opacity 0.4s; }
+        .form-group { margin-bottom: 25px; transform: translateZ(15px); }
+        .form-label { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .range-labels { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+        .val-max { color: var(--text-dark); font-size: 32px; font-weight: 800; }
+        input[type=range] { width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--color-blue); box-shadow: 0 4px 10px rgba(37,99,235,0.3); transition: 0.2s var(--spring); border: 4px solid white; cursor: pointer !important; }
+        
+        .tenure-btns { display: flex; gap: 12px; transform: translateZ(15px); }
+        .tenure-btn { flex: 1; padding: 12px; border-radius: 12px; background: white; border: 2px solid #e2e8f0; font-weight: 800; color: var(--text-muted); transition: 0.3s; text-align: center; }
+        .tenure-btn:nth-child(1).active { background: #fff7ed; color: var(--color-orange); border-color: var(--color-orange); }
+        .tenure-btn:nth-child(2).active { background: #fdf2f8; color: var(--color-pink); border-color: var(--color-pink); }
+        .tenure-btn:nth-child(3).active { background: #f0fdfa; color: var(--color-teal); border-color: var(--color-teal); }
+        
+        .dashboard-result { display: flex; align-items: center; gap: 30px; background: var(--bg-alt); border: 1px solid #e2e8f0; padding: 30px; border-radius: 24px; transform: translateZ(25px); margin-top: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); }
+        .result-data { flex: 1; }
+        .result-top { margin-bottom: 15px; }
+        .result-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+        .result-val { font-size: 40px; font-weight: 800; color: var(--text-dark); }
+        .rate-val { font-size: 20px; font-weight: 800; color: var(--color-green); margin-top: 10px; display: inline-block; padding: 5px 12px; background: #d1fae5; border-radius: 8px;}
+        
+        .donut-container { width: 120px; height: 120px; position: relative; border-radius: 50%; background: conic-gradient(var(--color-green) 0% 50%, var(--color-rose) 50% 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: background 0.4s var(--smooth); }
+        .donut-inner { width: 80px; height: 80px; background: var(--bg-alt); border-radius: 50%; box-shadow: inset 0 5px 10px rgba(0,0,0,0.05); }
+        
+        .amort-labels { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; font-size: 13px; font-weight: 700; color: var(--text-dark); }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+
+        /* TRACKER */
+        .tracker-container { max-width: 1000px; margin: -50px auto 80px; background: white; border: 1px solid #e2e8f0; padding: 40px; border-radius: 30px; box-shadow: var(--shadow-soft); display: flex; justify-content: space-between; position: relative; z-index: 20; }
+        .tracker-line { position: absolute; top: 50px; left: 100px; width: calc(100% - 200px); height: 4px; background: #f1f5f9; z-index: 1; }
+        .tracker-line-fill { position: absolute; top: 50px; left: 100px; width: 50%; height: 4px; background: linear-gradient(90deg, var(--color-cyan), var(--color-purple)); z-index: 2; transition: 1.5s var(--smooth); }
+        .tracker-step { position: relative; z-index: 3; text-align: center; width: 120px; }
+        .tracker-icon { width: 24px; height: 24px; border-radius: 50%; background: white; margin: 0 auto 15px; border: 4px solid #e2e8f0; transition: 0.5s; display: flex; align-items: center; justify-content: center; }
+        
+        .tracker-step:nth-child(3).completed .tracker-icon { border-color: var(--color-green); background: var(--color-green); }
+        .tracker-step:nth-child(4).completed .tracker-icon { border-color: var(--color-blue); background: var(--color-blue); }
+        .tracker-step:nth-child(5).active .tracker-icon { border-color: var(--color-purple); background: white; box-shadow: 0 0 0 4px rgba(139,92,246,0.2); }
+        .tracker-step h4 { font-size: 15px; font-weight: 700; color: var(--text-muted); transition: 0.3s; }
+        .tracker-step.completed h4, .tracker-step.active h4 { color: var(--text-dark); }
+
+        /* TICKER */
+        @keyframes scrollMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .marquee-wrapper { background: #0f172a; padding: 25px 0; display: flex; overflow: hidden; color: white; border-top: 4px solid var(--color-blue); }
+        .marquee-content { display: flex; width: max-content; animation: scrollMarquee 40s linear infinite; align-items: center; }
+        .marquee-item { flex-shrink: 0; display: flex; align-items: center; gap: 15px; padding: 0 40px; font-size: 16px; font-weight: 600; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.2); }
+        .ticker-up { color: #10b981; font-weight: 800; }
+        .ticker-neutral { color: #38bdf8; font-weight: 800; }
+
+        /* CIBIL BANNER */
+        .cibil-banner { background: linear-gradient(135deg, var(--color-blue), var(--color-cyan)); border-radius: 32px; padding: 60px; color: white; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: var(--shadow-glow); transition: transform 0.4s var(--spring), box-shadow 0.4s; overflow: hidden; position: relative; margin-top: 40px; }
+        .cibil-banner:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(37,99,235,0.4); }
+        .cibil-banner::after { content: ''; position: absolute; right: -50px; top: -50px; width: 300px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(30px); pointer-events: none; }
+        .cibil-content { max-width: 500px; position: relative; z-index: 2; }
+        .cibil-visual { position: relative; z-index: 2; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+        .score-val { font-size: 56px; font-weight: 800; line-height: 1; }
+        .score-lbl { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-top: 5px; }
+
+        /* BENTO GRID */
+        .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .bento-card { padding: 40px; border-radius: 32px; transition: 0.4s var(--spring); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; border: 1px solid transparent; }
+        .bento-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-soft); }
+        .bento-large { grid-column: span 2; grid-row: span 2; background: #eff6ff; border-color: #bfdbfe; }
+        .bento-large:hover { border-color: var(--color-blue); }
+        .bento-wide { grid-column: span 2; background: #faf5ff; border-color: #e9d5ff; }
+        .bento-wide:hover { border-color: var(--color-purple); }
+        .bento-card:nth-child(2) { background: #f0fdfa; border-color: #ccfbf1; } 
+        .bento-card:nth-child(2):hover { border-color: var(--color-teal); }
+        .bento-card:nth-child(3) { background: #fff7ed; border-color: #ffedd5; } 
+        .bento-card:nth-child(3):hover { border-color: var(--color-orange); }
+
+        .icon-box { width: 64px; height: 64px; border-radius: 18px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+        .bento-large .icon-box { background: white; color: var(--color-blue); }
+        .bento-card:nth-child(2) .icon-box { background: white; color: var(--color-teal); }
+        .bento-card:nth-child(3) .icon-box { background: white; color: var(--color-orange); }
+        .bento-card h3 { font-size: 26px; font-weight: 800; margin-bottom: 15px; color: var(--text-dark); }
+        .bento-card p { color: var(--text-muted); font-size: 16px; }
+
+        /* API & SECURITY */
+        .api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .api-card { background: white; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; box-shadow: var(--shadow-soft); transition: 0.3s; }
+        .api-card:hover { transform: translateY(-5px); }
+        .api-icon { width: 60px; height: 60px; margin: 0 auto 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; color: white; }
+        .api-card:nth-child(1) .api-icon { background: var(--color-orange); box-shadow: 0 10px 20px rgba(249,115,22,0.3); }
+        .api-card:nth-child(2) .api-icon { background: var(--color-blue); box-shadow: 0 10px 20px rgba(37,99,235,0.3); }
+        .api-card:nth-child(3) .api-icon { background: var(--color-green); box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
+        .api-card:nth-child(4) .api-icon { background: var(--color-purple); box-shadow: 0 10px 20px rgba(139,92,246,0.3); }
+        .api-card:nth-child(5) .api-icon { background: var(--color-rose); box-shadow: 0 10px 20px rgba(244,63,94,0.3); }
+        .security-box { padding: 25px 40px; border: 1px solid #e2e8f0; border-radius: 20px; text-align: center; background: white; transition: 0.3s; box-shadow: var(--shadow-soft); }
+        .security-box:hover { transform: translateY(-5px); }
+
+        /* === PRE-APPROVED PROPERTIES === */
+        .property-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        .property-card { background: white; border-radius: 24px; overflow: hidden; border: 1px solid #e2e8f0; transition: 0.5s; box-shadow: var(--shadow-soft); cursor: pointer; }
+        .property-card:hover { transform: translateY(-10px); }
+        .property-img { height: 250px; background-size: cover; background-position: center; position: relative; transition: transform 0.5s; }
+        .property-card:hover .property-img { transform: scale(1.05); }
+        .prop-tag { position: absolute; top: 20px; left: 20px; color: white; padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 800; z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .property-card:nth-child(1) .prop-tag { background: var(--color-green); }
+        .property-card:nth-child(2) .prop-tag { background: var(--color-purple); }
+        .property-card:nth-child(3) .prop-tag { background: var(--color-orange); }
+        .property-content { padding: 25px; position: relative; z-index: 3; background: white; }
+        .property-content h3 { font-size: 20px; font-weight: 800; margin-bottom: 5px; color: var(--text-dark); }
+        .prop-builder { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; color: var(--text-muted); border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: 15px; }
+
+        /* === DSA PARTNER NETWORK === */
+        .dsa-section { background: linear-gradient(135deg, #fdf4ff, #eff6ff); border-radius: 40px; padding: 80px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; overflow: hidden; box-shadow: var(--shadow-soft); }
+        .dsa-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; z-index: 2; }
+        .dsa-stat-card { background: white; border: 1px solid #e2e8f0; padding: 30px; border-radius: 20px; transition: 0.3s; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.02); }
+        .dsa-stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-soft); }
+        .dsa-stat-card:nth-child(1) h4 { color: var(--color-blue); }
+        .dsa-stat-card:nth-child(2) h4 { color: var(--color-pink); }
+        .dsa-stat-card:nth-child(3) h4 { color: var(--color-purple); }
+        .dsa-stat-card:nth-child(4) h4 { color: var(--color-teal); }
+        .dsa-stat-card h4 { font-size: 40px; font-weight: 800; margin-bottom: 5px; }
+
+        /* === LOAN PRODUCTS === */
+        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        .product-card { background: white; border-radius: 30px; overflow: hidden; border: 1px solid #e2e8f0; transition: 0.4s var(--spring); display: flex; flex-direction: column; box-shadow: var(--shadow-soft); cursor: pointer; }
+        .product-card:hover { transform: translateY(-10px); }
+        .product-img { height: 240px; position: relative; overflow: hidden; }
+        .product-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .product-card:hover .product-img img { transform: scale(1.08); }
+        
+        .product-icon { width: 60px; height: 60px; color: white; border-radius: 20px; display: flex; justify-content: center; align-items: center; margin-top: -30px; margin-bottom: 20px; border: 4px solid white; position: relative; z-index: 3; margin-left: 30px; transition: 0.5s; }
+        .product-card:nth-child(1) .product-icon { background: linear-gradient(135deg, #3b82f6, #06b6d4); box-shadow: 0 10px 20px rgba(37,99,235,0.3); }
+        .product-card:nth-child(2) .product-icon { background: linear-gradient(135deg, #10b981, #14b8a6); box-shadow: 0 10px 20px rgba(16,185,129,0.3); }
+        .product-card:nth-child(3) .product-icon { background: linear-gradient(135deg, #f97316, #f43f5e); box-shadow: 0 10px 20px rgba(249,115,22,0.3); }
+        .product-card:nth-child(4) .product-icon { background: linear-gradient(135deg, #ec4899, #8b5cf6); box-shadow: 0 10px 20px rgba(236,72,153,0.3); }
+        .product-card:nth-child(5) .product-icon { background: linear-gradient(135deg, #8b5cf6, #6366f1); box-shadow: 0 10px 20px rgba(139,92,246,0.3); }
+        .product-card:nth-child(6) .product-icon { background: linear-gradient(135deg, #14b8a6, #0ea5e9); box-shadow: 0 10px 20px rgba(20,184,166,0.3); }
+        
+        .product-content { padding: 0 30px 40px; flex: 1; display: flex; flex-direction: column; position: relative; z-index: 2; }
+        .product-content h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: var(--text-dark); }
+        
+        .benefits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .benefit-card { padding: 30px; background: white; border-radius: 20px; border: 1px solid #e2e8f0; text-align: center; transition: 0.3s; box-shadow: var(--shadow-soft); }
+        .benefit-card:hover { transform: translateY(-5px); border-color: var(--color-cyan); }
+
+        /* === DOCS & SCANNER === */
+        .doc-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+        .scanner-visual { width: 100%; height: 350px; background: #f1f5f9; border-radius: 30px; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; border: 1px solid #e2e8f0; box-shadow: inset 0 5px 20px rgba(0,0,0,0.05); }
+        .doc-mockup { width: 200px; height: 260px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative; }
+        .doc-line { height: 10px; background: #e2e8f0; border-radius: 5px; width: 100%; }
+        .doc-line.short { width: 60%; }
+        .doc-img { height: 80px; background: #e2e8f0; border-radius: 8px; width: 100%; }
+        .scanner-laser { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: var(--color-green); box-shadow: 0 5px 20px 5px rgba(16, 185, 129, 0.4); animation: scan 3s ease-in-out infinite; z-index: 5; }
+        @keyframes scan { 0%, 100% { top: 10%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 90%; } }
+
+        .doc-tabs { display: flex; background: #f8fafc; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+        .doc-tab { flex: 1; padding: 15px; text-align: center; font-size: 15px; font-weight: 800; border-radius: 16px; color: var(--text-muted); transition: 0.3s; cursor: pointer !important; }
+        .doc-tab:nth-child(1).active { background: var(--color-blue); color: white; box-shadow: 0 10px 20px rgba(37,99,235,0.2); }
+        .doc-tab:nth-child(2).active { background: var(--color-purple); color: white; box-shadow: 0 10px 20px rgba(139,92,246,0.2); }
+        
+        .doc-content { display: grid; gap: 15px; } 
+        .doc-item { display: flex; gap: 16px; align-items: center; padding: 16px; background: white; border-radius: 16px; border: 1px solid #e2e8f0; transition: 0.3s; font-weight: 600; color: var(--text-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .doc-item:hover { transform: translateX(10px); box-shadow: var(--shadow-soft); }
+        
+        .doc-item:nth-child(1) .check-icon { background: var(--color-blue); }
+        .doc-item:nth-child(2) .check-icon { background: var(--color-pink); }
+        .doc-item:nth-child(3) .check-icon { background: var(--color-orange); }
+        .doc-item:nth-child(4) .check-icon { background: var(--color-green); }
+        .check-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+
+        /* === RATES & FAQ === */
+        .rates-card { background: white; border-radius: 30px; border: 1px solid #e2e8f0; overflow: hidden; max-width: 1000px; margin: 0 auto; box-shadow: var(--shadow-soft); }
+        .rates-header { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr; background: #f8fafc; padding: 24px 40px; font-weight: 800; font-size: 18px; color: var(--text-dark); border-bottom: 2px solid #e2e8f0; }
+        .rates-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr; padding: 24px 40px; border-bottom: 1px solid #f1f5f9; transition: 0.3s; align-items: center; }
+        .rates-row:hover { background: #f8fafc; transform: scale(1.02); }
+        .rate-badge { background: #eff6ff; color: var(--color-blue); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-left:12px; }
+
+        .faq-wrapper { max-width: 900px; margin: 0 auto; }
+        details { background: white; border-radius: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; transition: 0.3s; box-shadow: var(--shadow-soft); cursor: pointer !important; }
+        details:nth-child(1):hover { border-color: var(--color-blue); }
+        details:nth-child(2):hover { border-color: var(--color-pink); }
+        details:nth-child(3):hover { border-color: var(--color-green); }
+        details:nth-child(4):hover { border-color: var(--color-orange); }
+        details:nth-child(5):hover { border-color: var(--color-purple); }
+        summary { padding: 30px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between; list-style: none; color: var(--text-dark); outline: none; cursor: pointer !important; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 28px; color: var(--text-muted); transition: 0.3s; }
+        details[open] summary::after { content: '-'; transform: rotate(180deg); color: var(--color-blue); }
+        .faq-content { padding: 0 30px 30px; color: var(--text-muted); }
+
+        /* === PARALLAX CTA === */
+        .parallax-section { position: relative; height: 600px; background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop'); background-attachment: fixed; background-position: center; background-size: cover; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 40px; margin: 0 24px; overflow: hidden; }
+        .parallax-overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(37, 99, 235, 0.9), rgba(139, 92, 246, 0.8)); backdrop-filter: blur(2px); }
+        .parallax-content { position: relative; z-index: 2; max-width: 800px; color: white; }
+        .parallax-content h2 { font-size: 64px; font-weight: 800; margin-bottom: 24px; letter-spacing: -1px; }
+
+        /* === LIGHT FOOTER === */
+        .footer { background: white; padding: 120px 0 40px; position: relative; overflow: hidden; margin-top: 60px; border-top: 1px solid #e2e8f0; }
+        .footer-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(circle, rgba(37,99,235,0.05) 0%, transparent 70%); pointer-events: none; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 60px; margin-bottom: 80px; position: relative; z-index: 10; }
+        .footer-brand p { color: var(--text-muted); font-size: 16px; margin: 30px 0; max-width: 350px; font-weight: 500; }
+        .social-links { display: flex; gap: 16px; margin-top: 20px;}
+        .social-links a { width: 48px; height: 48px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: all 0.3s var(--spring); }
+        .social-links a:hover { background: var(--color-blue); color: white; border-color: var(--color-blue); transform: translateY(-5px); box-shadow: var(--shadow-glow); }
+        .footer h4 { font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 30px; letter-spacing: 1px; color: var(--text-dark); }
+        .footer-links li { margin-bottom: 18px; } .footer-links a { color: var(--text-muted); transition: 0.3s; font-weight: 600; display: inline-block; }
+        .footer-links a:hover { color: var(--color-blue); transform: translateX(8px); }
+        .contact-box { background: #f8fafc; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; }
+        .contact-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .contact-box a { font-size: 24px; font-weight: 800; color: var(--text-dark); transition: 0.3s; } .contact-box a:hover { color: var(--color-blue); }
+        .footer-bottom { border-top: 1px solid #e2e8f0; padding-top: 30px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-muted); position: relative; z-index: 10; font-weight: 600; }
+
+        /* ==============================================================
+           🟢 MODALS, TOASTS & CHAT 
+           ============================================================== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); z-index: 100000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s var(--smooth); padding: 20px; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-box { background: white; border-radius: 24px; width: 100%; max-width: 500px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(50px) scale(0.9); transition: 0.4s; position: relative; cursor: default; }
+        .modal-overlay.active .modal-box { transform: translateY(0) scale(1); }
+        .close-btn { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: 0.3s; border: none; cursor: pointer !important; z-index: 10; }
+        .close-btn:hover { background: #e2e8f0; transform: rotate(90deg); }
+        
+        .modal-form input, .modal-form select { width: 100%; padding: 14px 18px; border-radius: 12px; border: 2px solid #e2e8f0; margin-bottom: 20px; font-size: 15px; outline: none; transition: 0.3s; font-family: 'Outfit', sans-serif; cursor: text !important; }
+        .modal-form select { cursor: pointer !important; }
+        .modal-form input:focus, .modal-form select:focus { border-color: var(--color-blue); box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+        .btn-loading { pointer-events: none; opacity: 0.8; }
+        .btn-loading .btn-text { display: none; }
+        .btn-loading::after { content: ''; width: 20px; height: 20px; border: 3px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: block; margin: 0 auto; }
+
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); z-index: 110000; background: white; padding: 16px 24px; border-radius: 100px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--text-dark); border: 1px solid #e2e8f0; opacity: 0; transition: 0.5s; cursor: default; }
+        .toast-container.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-icon { width: 28px; height: 28px; background: #10b981; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; }
+
+        .chat-widget { position: fixed; bottom: 110px; right: 40px; width: 350px; background: white; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 998; overflow: hidden; transform: translateY(20px) scale(0.9); opacity: 0; visibility: hidden; transition: 0.4s; transform-origin: bottom right; cursor: default; }
+        .chat-widget.active { transform: translateY(0) scale(1); opacity: 1; visibility: visible; }
+        .chat-header { background: var(--color-blue); color: white; padding: 20px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+        .chat-body { padding: 20px; height: 300px; overflow-y: auto; background: #f8fafc; }
+        .chat-msg { background: white; padding: 12px 16px; border-radius: 16px; border-bottom-left-radius: 4px; box-shadow: var(--shadow-soft); font-size: 14px; color: var(--text-dark); margin-bottom: 15px; border: 1px solid #e2e8f0; display: inline-block; max-width: 85%; }
+        .chat-input { padding: 15px 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .chat-input input { flex: 1; border: none; outline: none; font-size: 14px; background: #f1f5f9; padding: 10px 15px; border-radius: 20px; cursor: text !important; }
+        .chat-input button { background: var(--color-blue); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer !important; }
+    </style>
+</head>
+<body>
+
+    <div id="preloader"><div class="loader-ring"></div></div>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <div class="fab-container">
+        <div class="fab-btn magnetic-wrap-nav hover-target" onclick="toggleChat()">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        </div>
+        <div class="fab-menu">
+            <a href="tel:+917338941579" class="fab-item hover-target" data-tooltip="Call Us"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg></a>
+            <a href="#" class="fab-item hover-target" data-tooltip="WhatsApp"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></a>
+        </div>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-content">
+            <div class="magnetic-wrap-nav"><a href="/"><img src="logo" alt="Smart Choice" class="custom-logo magnetic-btn hover-target"></a></div>
+            <div class="nav-links">
+                <div class="magnetic-wrap-nav"><a href="/#home" class="active magnetic-btn hover-target">Platform</a></div>
+                <div class="magnetic-wrap-nav"><a href="/properties.html" class="magnetic-btn hover-target">Properties</a></div>
+                <div class="magnetic-wrap-nav"><a href="/loans-details.html" class="magnetic-btn hover-target">Loans</a></div>
+                <div class="magnetic-wrap-nav"><a href="/credit-score.html" class="magnetic-btn hover-target">Credit Score</a></div>
+            </div>   
+            <div class="magnetic-wrap-nav" style="margin-left: auto;">
+                {% if user_status.logged_in %}
+                    <button class="btn btn-gradient magnetic-btn hover-target" onclick="window.location.href='{{ user_status.dashboard }}'">My Dashboard ➔</button>
+                {% else %}
+                    <button class="btn btn-outline magnetic-btn hover-target" onclick="window.location.href='/login.html'">Login / Apply</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero container">
+        <div class="hero-grid">
+            <div class="hero-content">
+                <div class="badge gsap-reveal"><div class="pulse-dot"></div> Enterprise Grade Platform</div>
+                <h1 class="hero-title gsap-reveal">Smarter Loans for <br><span class="text-gradient-blue text-gradient">Modern Banks.</span></h1>
+                <p class="hero-desc gsap-reveal">White-label digital mortgage infrastructure. Provide your customers with instant approvals, transparent rates, and a seamless paperless journey.</p>
+                <div style="display: flex; gap: 16px; margin-top: 10px;" class="gsap-reveal">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700;"><svg width="20" height="20" fill="none" stroke="var(--color-blue)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> Zero Setup Cost</div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700;"><svg width="20" height="20" fill="none" stroke="var(--color-pink)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> RBI Compliant</div>
+                </div>
+                <div class="magnetic-wrap gsap-reveal" style="margin-top: 30px;">
+                    <button class="btn btn-gradient magnetic hover-target" onclick="window.location.href='login.html'">Apply for Loan Now ➔</button>
+                </div>
+            </div>
+            
+            <div class="calc-wrapper gsap-reveal" data-delay="0.2">
+                <div class="calc-card hover-target" id="interactive-card">
+                    <div class="calc-tabs">
+                        <div class="calc-tab active magnetic-btn hover-target" id="tab-emi" data-target="emi-view">EMI Calculator</div>
+                        <div class="calc-tab magnetic-btn hover-target" id="tab-elig" data-target="eligibility-view">Eligibility Check</div>
+                    </div>
+
+                    <div id="emi-view" class="view-section">
+                        <div class="form-group">
+                            <label class="form-label">Loan Amount Required</label>
+                            <div class="range-labels"><span style="color:var(--text-muted); font-size:14px; font-weight:700;">₹10L</span><span class="val-max" id="display-amount">₹50,00,000</span></div>
+                            <input type="range" id="loan-amount" min="1000000" max="100000000" step="1000000" value="50000000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Loan Tenure (Years)</label>
+                            <div class="tenure-btns">
+                                <button class="tenure-btn magnetic-btn hover-target">10</button>
+                                <button class="tenure-btn active magnetic-btn hover-target">15</button>
+                                <button class="tenure-btn magnetic-btn hover-target">20</button>
+                            </div>
+                        </div>
+                        <div class="dashboard-result">
+                            <div class="donut-container" id="donut-chart">
+                                <div class="donut-inner"></div>
+                            </div>
+                            <div class="result-data">
+                                <div class="result-top">
+                                    <div class="result-label">Estimated Monthly EMI</div>
+                                    <div class="result-val" id="display-emi">₹49,236</div>
+                                    <div class="rate-val">8.50% p.a.</div>
+                                </div>
+                                <div class="amort-labels">
+                                    <span><span class="dot" style="background:var(--color-green);"></span>Principal: <span id="lbl-principal">50%</span></span>
+                                    <span><span class="dot" style="background:var(--color-rose);"></span>Interest: <span id="lbl-interest">50%</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="eligibility-view" class="view-section" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Monthly Net Income</label>
+                            <div class="range-labels"><span style="color:var(--text-muted); font-size:14px; font-weight:700;">₹20K</span><span class="val-max" id="display-income">₹1,00,000</span></div>
+                            <input type="range" id="monthly-income" min="20000" max="500000" step="5000" value="100000" style="background: linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) 16%, #e2e8f0 16%, #e2e8f0 100%)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Existing Monthly EMIs</label>
+                            <div class="range-labels"><span style="color:var(--text-muted); font-size:14px; font-weight:700;">₹0</span><span class="val-max" id="display-exist-emi">₹15,000</span></div>
+                            <input type="range" id="exist-emi" min="0" max="200000" step="1000" value="15000" style="background: linear-gradient(to right, var(--color-purple) 0%, var(--color-purple) 7.5%, #e2e8f0 7.5%, #e2e8f0 100%)">
+                        </div>
+                        <div class="dashboard-result" style="justify-content: center; text-align: center;">
+                            <div>
+                                <div class="result-label">Max Eligible Loan Amount</div>
+                                <div class="result-val" id="display-eligible-loan" style="color: var(--color-green);">₹45,00,000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="margin-top: -50px; margin-bottom: 40px;">
+        <h3 style="text-align: center; margin-bottom: 40px; font-weight: 800; font-size: 24px; color: var(--text-dark);" class="gsap-reveal">How It Works</h3>
+        <div class="tracker-container gsap-reveal hover-target">
+            <div class="tracker-line"></div>
+            <div class="tracker-line-fill"></div>
+            <div class="tracker-step completed"><div class="tracker-icon"><svg width="14" height="14" fill="none" stroke="white" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div><h4>Apply Online</h4></div>
+            <div class="tracker-step completed"><div class="tracker-icon"><svg width="14" height="14" fill="none" stroke="white" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div><h4>Upload KYC</h4></div>
+            <div class="tracker-step active"><div class="tracker-icon"></div><h4>Underwriting</h4></div>
+            <div class="tracker-step"><div class="tracker-icon"></div><h4>Instant Sanction</h4></div>
+            <div class="tracker-step"><div class="tracker-icon"></div><h4>Disbursal</h4></div>
+        </div>
+    </section>
+
+    <div class="marquee-wrapper">
+        <div class="marquee-content">
+            <div class="marquee-item">⚡ Live RBI Repo Rate Unchanged at <span class="ticker-neutral">6.50%</span></div>
+            <div class="marquee-item">📈 Real Estate Market Index <span class="ticker-up">+1.2%</span></div>
+            <div class="marquee-item">🚀 Smart Choice Platform processes 10,000+ loans daily</div>
+            <div class="marquee-item">🏦 HDFC Partner Rates starting at <span class="ticker-neutral">8.40% p.a.</span></div>
+            
+            <div class="marquee-item">⚡ Live RBI Repo Rate Unchanged at <span class="ticker-neutral">6.50%</span></div>
+            <div class="marquee-item">📈 Real Estate Market Index <span class="ticker-up">+1.2%</span></div>
+            <div class="marquee-item">🚀 Smart Choice Platform processes 10,000+ loans daily</div>
+            <div class="marquee-item">🏦 HDFC Partner Rates starting at <span class="ticker-neutral">8.40% p.a.</span></div>
+        </div>
+    </div>
+
+    <section class="container" style="margin-top: 80px; margin-bottom: 40px;">
+        <div class="cibil-banner gsap-reveal hover-target" onclick="window.location.href='credit-score.html'">
+            <div class="cibil-content">
+                <h2 style="font-size: 42px; font-weight: 800; margin-bottom: 15px; color: white; line-height: 1.1;">What's your <br>Credit Score?</h2>
+                <p style="font-size: 18px; margin-bottom: 30px; opacity: 0.9;">Get your detailed CIBIL report in seconds. It's 100% free and does not impact your credit rating.</p>
+                <button class="btn hover-target" style="background: white; color: var(--color-blue); box-shadow: 0 10px 20px rgba(0,0,0,0.1);">Check Free Score ➔</button>
+            </div>
+            <div class="cibil-visual">
+                <div class="score-val">750+</div>
+                <div class="score-lbl">Excellent</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="infrastructure" class="section-padding container">
+        <div class="section-header gsap-reveal">
+            <h2>Digital Mortgage Infrastructure</h2>
+            <p>The core technology stack that powers instant decisions and seamless operations.</p>
+        </div>
+        <div class="bento-grid">
+            <div class="bento-card bento-large gsap-reveal hover-target">
+                <div>
+                    <div class="icon-box" style="background: white; border: none; box-shadow: 0 10px 20px rgba(37,99,235,0.1);"><svg fill="none" stroke="var(--color-blue)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div>
+                    <h3 style="font-size: 42px;">AI-Powered Underwriting</h3>
+                    <p style="font-size: 18px; margin-top: 20px;">Our algorithm connects with credit bureaus and bank statements to assess risk and generate sanction letters in under 5 minutes without human intervention.</p>
+                </div>
+            </div>
+            <div class="bento-card gsap-reveal hover-target" data-delay="0.1">
+                <div class="icon-box"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
+                <h3>Bank-Grade Security</h3>
+                <p>256-bit encryption for all customer document uploads.</p>
+            </div>
+            <div class="bento-card gsap-reveal hover-target" data-delay="0.2">
+                <div class="icon-box"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                <h3>E-Sign & E-Stamp</h3>
+                <p>Complete agreements digitally with Aadhaar-based signing.</p>
+            </div>
+            <div class="bento-card bento-wide bento-dark gsap-reveal hover-target" data-delay="0.1">
+                <h3 style="font-size: 32px;">Real-Time Branch Dashboard</h3>
+                <p style="max-width: 400px; margin-top: 15px;">Equip your loan officers with a unified CRM to track applications, upload property reports, and disburse funds.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-padding container">
+        <div class="section-header gsap-reveal"><h2>Seamless Integrations</h2></div>
+        <div class="api-grid gsap-reveal">
+            <div class="api-card hover-target"><div class="api-icon">U</div><h4>UIDAI</h4><p style="font-size:14px; color:var(--text-muted);">Aadhaar KYC</p></div>
+            <div class="api-card hover-target"><div class="api-icon">N</div><h4>NSDL</h4><p style="font-size:14px; color:var(--text-muted);">PAN Verification</p></div>
+            <div class="api-card hover-target"><div class="api-icon">C</div><h4>CIBIL</h4><p style="font-size:14px; color:var(--text-muted);">Credit Bureau</p></div>
+            <div class="api-card hover-target"><div class="api-icon">P</div><h4>Perfios</h4><p style="font-size:14px; color:var(--text-muted);">Bank Statements</p></div>
+            <div class="api-card hover-target"><div class="api-icon">I</div><h4>ITR</h4><p style="font-size:14px; color:var(--text-muted);">Income Tax Dept</p></div>
+        </div>
+    </section>
+
+    <section class="section-padding doc-section">
+        <div class="container">
+            <div class="section-header gsap-reveal">
+                <h2>Minimal Documentation</h2>
+                <p>Upload files seamlessly to our Smart KYC Vault.</p>
+            </div>
+            <div class="doc-wrapper gsap-reveal">
+                <div>
+                    <div class="doc-tabs">
+                        <div class="doc-tab active hover-target" data-target="salaried">Salaried Employees</div>
+                        <div class="doc-tab hover-target" data-target="business">Self-Employed / Business</div>
+                    </div>
+                    <div class="doc-content" id="doc-salaried">
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-blue)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">PAN Card & Aadhaar Card</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-pink)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">Last 3 Months Salary Slips</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-orange)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">Last 6 Months Bank Statements</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-green)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">Form 16 / Latest ITR</span></div>
+                    </div>
+                    <div class="doc-content" id="doc-business" style="display: none;">
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-orange)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">PAN, Aadhaar & Business Proof</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-pink)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">Last 12 Months Bank Statements</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-blue)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">Last 3 Years ITR with Computation</span></div>
+                        <div class="doc-item hover-target"><div class="check-icon" style="background:var(--color-green)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div> <span style="color:var(--text-dark);">P&L and Balance Sheet (Audited)</span></div>
+                    </div>
+                </div>
+                <div class="scanner-visual hover-target">
+                    <div class="scanner-laser"></div>
+                    <div class="doc-mockup">
+                        <div class="doc-img"></div>
+                        <div class="doc-line"></div>
+                        <div class="doc-line short"></div>
+                        <div class="doc-line"></div>
+                        <div style="margin-top:auto; font-size:10px; font-weight:700; color:var(--color-green); text-align:center;">VERIFIED VIA CKYC</div>
+                    </div>
+                </div>
+            </div>
+            
+            
+    </section>
+
+    <section class="section-padding container">
+        <div class="section-header gsap-reveal">
+            <h2>Pre-Approved Properties</h2>
+            <p>Fast-track sanctions for properties from our top Tier-1 builder network.</p>
+        </div>
+        <div class="property-grid">
+            <div class="property-card gsap-reveal hover-target" onclick="window.location.href='properties.html'">
+                <div class="property-img" style="background-image: url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80');"><div class="prop-tag">Instant Approval</div></div>
+                <div class="property-content"><h3>Prestige Lakeside</h3><p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Whitefield, Bangalore</p><div class="prop-builder">Prestige Group</div></div>
+            </div>
+            <div class="property-card gsap-reveal hover-target" data-delay="0.1" onclick="window.location.href='properties.html'">
+                <div class="property-img" style="background-image: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80');"><div class="prop-tag">Instant Approval</div></div>
+                <div class="property-content"><h3>DLF Cyber City Villas</h3><p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Gurgaon, Delhi NCR</p><div class="prop-builder">DLF Properties</div></div>
+            </div>
+            <div class="property-card gsap-reveal hover-target" data-delay="0.2" onclick="window.location.href='properties.html'">
+                <div class="property-img" style="background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80');"><div class="prop-tag">Instant Approval</div></div>
+                <div class="property-content"><h3>Godrej Emerald</h3><p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Thane, Mumbai</p><div class="prop-builder">Godrej Properties</div></div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;" class="gsap-reveal">
+            <a href="properties.html" class="btn btn-outline magnetic hover-target">View All Properties ➔</a>
+        </div>
+    </section>
+
+    <section id="partner" class="section-padding container">
+        <div class="dsa-section gsap-reveal">
+            <div style="position: relative; z-index: 2;">
+                <h2 style="font-size: 48px; font-weight: 800; margin-bottom: 20px; color: var(--text-dark);">Grow with us. <br>Become a Partner.</h2>
+                <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 30px; max-width: 400px; font-weight: 500;">Are you a Real Estate Broker, DSA, or CA? Join our network, log in leads digitally, and track commissions in real-time.</p>
+                <div class="magnetic-wrap"><button class="btn btn-gradient magnetic hover-target" onclick="window.location.href='login.html'">Register as DSA</button></div>
+            </div>
+            <div class="dsa-stats">
+                <div class="dsa-stat-card hover-target"><h4>1.5%</h4><p style="color: var(--text-muted); font-weight: 600;">Flat Commission</p></div>
+                <div class="dsa-stat-card hover-target"><h4>48 Hrs</h4><p style="color: var(--text-muted); font-weight: 600;">Payout Time</p></div>
+                <div class="dsa-stat-card hover-target"><h4>10K+</h4><p style="color: var(--text-muted); font-weight: 600;">Active Partners</p></div>
+                <div class="dsa-stat-card hover-target"><h4>Zero</h4><p style="color: var(--text-muted); font-weight: 600;">Joining Fees</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="products" class="section-padding container">
+        <div class="section-header gsap-reveal"><h2>Complete Loan Portfolio</h2></div>
+        <div class="products-grid">
+            <div class="product-card gsap-reveal hover-target" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></div><h3 style="color:var(--text-dark);">Home Purchase</h3><p>Financing for ready-to-move-in apartments, villas, and developer properties.</p></div></div>
+            <div class="product-card gsap-reveal hover-target" data-delay="0.1" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div><h3 style="color:var(--text-dark);">Construction Loan</h3><p>Step-by-step milestone-based financing for building a custom home on a plot.</p></div></div>
+            <div class="product-card gsap-reveal hover-target" data-delay="0.2" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg></div><h3 style="color:var(--text-dark);">Balance Transfer</h3><p>Enable customers to switch existing high-interest loans to your bank effortlessly.</p></div></div>
+            <div class="product-card gsap-reveal hover-target" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><h3 style="color:var(--text-dark);">NRI Home Loans</h3><p>Specialized property financing for Non-Resident Indians to invest in their homeland.</p></div></div>
+            <div class="product-card gsap-reveal hover-target" data-delay="0.1" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg></div><h3 style="color:var(--text-dark);">Top-Up Loans</h3><p>Get additional funds over your existing home loan for renovations or personal needs.</p></div></div>
+            <div class="product-card gsap-reveal hover-target" data-delay="0.2" onclick="window.location.href='loans-details.html'"><div class="product-img"><img src="https://images.unsplash.com/photo-1524813686514-a57563d77965?auto=format&fit=crop&w=800&q=80"></div><div class="product-content"><div class="product-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg></div><h3 style="color:var(--text-dark);">Plot Purchase</h3><p>Finance the purchase of an empty residential plot for future construction plans.</p></div></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;" class="gsap-reveal">
+            <a href="loans-details.html" class="btn btn-outline magnetic hover-target">View All Loan Products ➔</a>
+        </div>
+    </section>
+
+    <section class="section-padding container">
+        <div class="section-header gsap-reveal"><h2>Premium Loan Benefits</h2></div>
+        <div class="benefits-grid gsap-reveal">
+            <div class="benefit-card hover-target"><h4 style="color:var(--color-blue);">Zero Foreclosure</h4><p style="color:var(--text-muted);font-size:14px;">No penalties for closing early.</p></div>
+            <div class="benefit-card hover-target"><h4 style="color:var(--color-purple);">Overdraft Facility</h4><p style="color:var(--text-muted);font-size:14px;">Save interest parking idle funds.</p></div>
+            <div class="benefit-card hover-target"><h4 style="color:var(--color-pink);">Doorstep Service</h4><p style="color:var(--text-muted);font-size:14px;">Executives visit for signatures.</p></div>
+            <div class="benefit-card hover-target"><h4 style="color:var(--color-orange);">Daily Interest Calc</h4><p style="color:var(--text-muted);font-size:14px;">Calculated daily, saving you more.</p></div>
+        </div>
+    </section>
+
+    <section class="section-padding container">
+        <div class="section-header gsap-reveal">
+            <h2>Customer Success Stories</h2>
+            <p>Hear from families who found their dream home using our platform.</p>
+        </div>
+        <div class="video-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;">
+            <div class="video-card gsap-reveal hover-target" style="height: 350px; border-radius: 30px; position: relative; overflow: hidden; box-shadow: var(--shadow-soft);">
+                <div class="video-bg" style="background-image: url('https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80'); position: absolute; inset: 0; background-size: cover; background-position: center; transition: 0.5s;"></div>
+                <div class="video-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 30px; display: flex; flex-direction: column; justify-content: flex-end;">
+                    <div class="video-info" style="color: white;"><h4>Rajesh & Priya</h4><p style="opacity: 0.8; font-size: 14px;">Approved in 24 Hours</p></div>
+                </div>
+            </div>
+            <div class="video-card gsap-reveal hover-target" data-delay="0.1" style="height: 350px; border-radius: 30px; position: relative; overflow: hidden; box-shadow: var(--shadow-soft);">
+                <div class="video-bg" style="background-image: url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80'); position: absolute; inset: 0; background-size: cover; background-position: center; transition: 0.5s;"></div>
+                <div class="video-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 30px; display: flex; flex-direction: column; justify-content: flex-end;">
+                    <div class="video-info" style="color: white;"><h4>Siddharth Kumar</h4><p style="opacity: 0.8; font-size: 14px;">Zero Branch Visits</p></div>
+                </div>
+            </div>
+            <div class="video-card gsap-reveal hover-target" data-delay="0.2" style="height: 350px; border-radius: 30px; position: relative; overflow: hidden; box-shadow: var(--shadow-soft);">
+                <div class="video-bg" style="background-image: url('https://images.unsplash.com/photo-1508214751196-bfdd4ca460d0?auto=format&fit=crop&w=800&q=80'); position: absolute; inset: 0; background-size: cover; background-position: center; transition: 0.5s;"></div>
+                <div class="video-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 30px; display: flex; flex-direction: column; justify-content: flex-end;">
+                    <div class="video-info" style="color: white;"><h4>Anita Desai</h4><p style="opacity: 0.8; font-size: 14px;">Seamless Builder Transfer</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="rates" class="section-padding rates-section">
+        <div class="container">
+            <div class="section-header gsap-reveal"><h2>Live Interest Rates</h2></div>
+            <div class="rates-card gsap-reveal">
+                <div class="rates-header">
+                    <div>Applicant Profile</div><div>Loan Amount</div><div style="text-align: right;">Current Rate</div>
+                </div>
+                <div class="rates-row hover-target">
+                    <div class="rate-title">Salaried Professionals <span class="rate-badge">Lowest</span></div>
+                    <div style="font-weight: 600; color: var(--text-muted);">Up to ₹30 Lakhs</div>
+                    <div class="rate-value" style="text-align: right; color:var(--color-blue); font-weight:800;">8.40% p.a.</div>
+                </div>
+                <div class="rates-row hover-target">
+                    <div class="rate-title">Self-Employed / Business</div>
+                    <div style="font-weight: 600; color: var(--text-muted);">Above ₹30 Lakhs</div>
+                    <div class="rate-value" style="text-align: right; color:var(--color-blue); font-weight:800;">8.75% p.a.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-padding container">
+        <div class="section-header gsap-reveal"><h2>Frequently Asked Questions</h2></div>
+        <div class="faq-wrapper gsap-reveal">
+            <details class="hover-target">
+                <summary style="color:var(--text-dark);">Can this platform integrate with our existing Core Banking System (CBS)?</summary>
+                <div class="faq-content">Yes. Our platform is built on a microservices architecture with open APIs. We seamlessly integrate with Finacle, BaNCS, Flexcube, and other major CBS providers.</div>
+            </details>
+            <details class="hover-target">
+                <summary style="color:var(--text-dark);">How does the AI Underwriting engine work?</summary>
+                <div class="faq-content">The engine uses OCR to read documents, pulls data via API from NSDL, UIDAI, CIBIL for credit scores, and Account Aggregators for banking history to calculate FOIR in seconds.</div>
+            </details>
+            <details class="hover-target">
+                <summary style="color:var(--text-dark);">How long does it take to deploy the white-label platform?</summary>
+                <div class="faq-content">We offer rapid deployment. Once the branding and API credentials are provided, the platform can go live for your bank or NBFC in less than 30 days.</div>
+            </details>
+            <details class="hover-target">
+                <summary style="color:var(--text-dark);">Is the platform compliant with RBI data localization norms?</summary>
+                <div class="faq-content">Absolutely. All data is hosted on highly secure, ISO 27001 certified servers physically located within India, fully adhering to RBI and UIDAI compliance guidelines.</div>
+            </details>
+        </div>
+    </section>
+
+    <section class="parallax-section gsap-reveal" id="parallax-cta">
+        <div class="parallax-overlay"></div>
+        <div class="parallax-content">
+            <h2>Ready to transform your lending?</h2>
+            <p style="font-size:18px; margin-bottom: 20px;">Deploy our white-label Digital Mortgage Platform for your Bank/NBFC in less than 30 days. Experience the highest conversion rates in the industry.</p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top:30px;">
+                <div class="magnetic-wrap"><button class="btn btn-gradient magnetic hover-target" onclick="window.location.href='login.html'">Apply for Loan Now ➔</button></div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-glow-1"></div><div class="footer-glow-2"></div>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="gsap-reveal">
+                    <img src="/static/Companylogo1.png" alt="Company IT Park" class="custom-logo hover-target" style="margin-bottom: 20px; filter: brightness(0) invert(1);">
+                    <p>Empowering the next generation of tech giants at Company IT Park. Built for creators, by creators.</p>
+                </div>
+                <div class="gsap-reveal" data-delay="0.1">
+                    <h4>Platform</h4>
+                    <ul class="footer-links">
+                        <li><a href="#infrastructure" class="hover-target">Loan Origination</a></li>
+                        <li><a href="login.html" class="hover-target">Customer Portal</a></li>
+                        <li><a href="#infrastructure" class="hover-target">Security & Compliance</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.2">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="hover-target">About Company</a></li>
+                        <li><a href="#partner" class="hover-target">Bank Partnerships</a></li>
+                        <li><a href="#" class="hover-target">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="gsap-reveal" data-delay="0.3">
+                    <h4>Contact Us</h4>
+                    <div class="contact-box hover-target magnetic-wrap">
+                        <div class="magnetic">
+                            <p style="color:var(--text-muted); margin-bottom:10px;"><svg width="20" height="20" fill="none" stroke="var(--color-blue)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> Sales</p>
+                            <a href="tel:+917338941579">(+91) 9876543210</a>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 20px;">Company Name, Address,<br>City, State - 123 456</p>
+                </div>
+            </div>
+            <div class="footer-bottom gsap-reveal">
+                <div>&copy; 2026 Company. All rights reserved. Built for modern finance.</div>
+                <div>Status: <span style="color: #10b981; font-weight: 800;">● All Systems Operational</span></div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-header">
+            <span>Smart Choice Assistant</span>
+            <button style="background:transparent; border:none; color:white; cursor:pointer;" class="hover-target" onclick="toggleChat()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-msg">Hello! I'm your digital lending assistant. How can I help you today?</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Type your message..." id="chatInput" onfocus="document.body.classList.add('typing-mode')" onblur="document.body.classList.remove('typing-mode')">
+            <button class="hover-target" onclick="sendChat()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // PRELOADER
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 800);
+            }, 800);
+
+            // SAFE EXTERNAL TECH (Lenis & GSAP)
+            try {
+                if (typeof Lenis !== 'undefined') {
+                    const lenis = new Lenis({ duration: 1.2, smooth: true });
+                    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+                    requestAnimationFrame(raf);
+                    
+                    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                        lenis.on('scroll', ScrollTrigger.update);
+                        gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
+                        gsap.ticker.lagSmoothing(0);
+                    }
+                }
+            } catch (e) { console.warn("Lenis bypassed."); }
+
+            try {
+                if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                    gsap.registerPlugin(ScrollTrigger);
+                    
+                    gsap.to("#parallax-cta", { 
+                        backgroundPosition: "50% 100%", ease: "none", 
+                        scrollTrigger: { trigger: "#parallax-cta", start: "top bottom", end: "bottom top", scrub: true } 
+                    });
+
+                    document.querySelectorAll('.gsap-reveal').forEach(el => {
+                        let delay = el.getAttribute('data-delay') || 0;
+                        gsap.fromTo(el, 
+                            { y: 50, opacity: 0 }, 
+                            { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: parseFloat(delay),
+                              scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }
+                            }
+                        );
+                    });
+                }
+            } catch (e) { console.warn("GSAP bypassed."); }
+
+            // CUSTOM CURSOR (SAFELY HIDDEN ON INPUTS)
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+
+                document.querySelectorAll('.hover-target, a, button').forEach(target => {
+                    target.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+                    target.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+                });
+            }
+
+            // INTERACTIVE CANVAS
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height, particles = [];
+                const mouse = { x: -1000, y: -1000 };
+                const colors = ['#2563eb', '#ec4899', '#8b5cf6', '#10b981', '#f97316']; 
+
+                function initCanvas() {
+                    width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
+                    particles = [];
+                    for(let i = 0; i < 70; i++) { 
+                        particles.push({ 
+                            x: Math.random() * width, y: Math.random() * height, 
+                            vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, 
+                            size: Math.random() * 2 + 1,
+                            color: colors[Math.floor(Math.random() * colors.length)]
+                        }); 
+                    }
+                }
+                window.addEventListener('resize', initCanvas);
+                window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+                
+                function animateParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy;
+                        if(p.x < 0 || p.x > width) p.vx *= -1; if(p.y < 0 || p.y > height) p.vy *= -1;
+                        
+                        let dx = mouse.x - p.x; let dy = mouse.y - p.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 150) { p.x -= dx/30; p.y -= dy/30; }
+                        
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        
+                        particles.forEach(p2 => {
+                            let d = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+                            if(d < 120) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(148, 163, 184, ${0.15 * (1 - d/120)})`; ctx.stroke(); }
+                        });
+                    });
+                    requestAnimationFrame(animateParticles);
+                }
+                initCanvas(); animateParticles();
+            }
+
+            // MAGNETIC BUTTONS
+            document.querySelectorAll('.magnetic').forEach(btn => {
+                btn.addEventListener('mousemove', (e) => {
+                    const rect = btn.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) * 0.4; 
+                    const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                    btn.style.transform = `translate(${x}px, ${y}px)`;
+                });
+                btn.addEventListener('mouseleave', () => { btn.style.transform = `translate(0px, 0px)`; });
+            });
+
+            // 🟢 FIXED NAVBAR SCROLL LOGIC
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); }, { passive: true });
+
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    
+                    if (href.startsWith('#') || (href.includes('#') && href.split('#')[0] === window.location.pathname.split('/').pop())) {
+                        e.preventDefault();
+                        const targetId = href.split('#')[1];
+                        const targetElement = document.getElementById(targetId);
+                        
+                        if (targetElement) {
+                            window.scrollTo({ top: targetElement.offsetTop - 85, behavior: 'smooth' });
+                            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    }
+                });
+            });
+
+            // 3D CALCULATOR & EMI LOGIC
+            const calcCard = document.getElementById('interactive-card');
+            const sliderAmount = document.getElementById('loan-amount');
+            
+            const displayAmt = document.getElementById('display-amount');
+            const displayEmi = document.getElementById('display-emi');
+            const tenureBtns = document.querySelectorAll('.tenure-btn');
+            const barPrincipal = document.getElementById('bar-principal');
+            const barInterest = document.getElementById('bar-interest');
+            const lblPrincipal = document.getElementById('lbl-principal');
+            const lblInterest = document.getElementById('lbl-interest');
+
+            const sliderIncome = document.getElementById('monthly-income');
+            const sliderExistEmi = document.getElementById('exist-emi');
+            const displayIncome = document.getElementById('display-income');
+            const displayExistEmi = document.getElementById('display-exist-emi');
+            const displayEligibleLoan = document.getElementById('display-eligible-loan');
+
+            const donutChart = document.getElementById('donut-chart');
+
+            let years = 15; const annualInterestRate = 8.5; 
+            const formatINR = (num) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
+
+            const calculateEMI = () => {
+                if(!sliderAmount) return;
+                const principal = parseInt(sliderAmount.value);
+                const r = annualInterestRate / 12 / 100; const n = years * 12; 
+                const emi = principal * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                
+                displayAmt.textContent = formatINR(principal);
+                displayEmi.innerHTML = `${formatINR(emi)}`;
+
+                const totalPayment = emi * n;
+                const principalPercent = Math.round((principal / totalPayment) * 100);
+                const interestPercent = 100 - principalPercent;
+
+                if(barPrincipal && barInterest) {
+                    barPrincipal.style.width = `${principalPercent}%`; barInterest.style.width = `${interestPercent}%`;
+                    lblPrincipal.textContent = `${principalPercent}%`; lblInterest.textContent = `${interestPercent}%`;
+                    
+                    if(donutChart) {
+                        donutChart.style.background = `conic-gradient(var(--color-green) 0% ${principalPercent}%, var(--color-rose) ${principalPercent}% 100%)`;
+                    }
+                }
+            };
+
+            const calculateEligibility = () => {
+                if(!sliderIncome || !sliderExistEmi) return;
+                const income = parseInt(sliderIncome.value);
+                const existEmi = parseInt(sliderExistEmi.value);
+                
+                displayIncome.textContent = formatINR(income);
+                displayExistEmi.textContent = formatINR(existEmi);
+
+                let maxAffordableEmi = (income * 0.5) - existEmi;
+                if (maxAffordableEmi < 0) maxAffordableEmi = 0;
+
+                const r = annualInterestRate / 12 / 100; const n = years * 12; 
+                const maxLoan = maxAffordableEmi * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+                
+                displayEligibleLoan.innerHTML = `${formatINR(maxLoan)}`;
+                
+                const valInc = (sliderIncome.value - sliderIncome.min) / (sliderIncome.max - sliderIncome.min) * 100;
+                sliderIncome.style.background = `linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) ${valInc}%, #e2e8f0 ${valInc}%, #e2e8f0 100%)`;
+                
+                const valEmi = (sliderExistEmi.value - sliderExistEmi.min) / (sliderExistEmi.max - sliderExistEmi.min) * 100;
+                sliderExistEmi.style.background = `linear-gradient(to right, var(--color-purple) 0%, var(--color-purple) ${valEmi}%, #e2e8f0 ${valEmi}%, #e2e8f0 100%)`;
+            };
+
+            if(sliderAmount) {
+                sliderAmount.addEventListener('input', (e) => {
+                    const value = (sliderAmount.value - sliderAmount.min) / (sliderAmount.max - sliderAmount.min) * 100;
+                    sliderAmount.style.background = `linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) ${value}%, #e2e8f0 ${value}%, #e2e8f0 100%)`;
+                    calculateEMI();
+                });
+                sliderAmount.dispatchEvent(new Event('input')); 
+            }
+
+            if(sliderIncome && sliderExistEmi) {
+                sliderIncome.addEventListener('input', calculateEligibility);
+                sliderExistEmi.addEventListener('input', calculateEligibility);
+            }
+
+            tenureBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    tenureBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
+                    years = parseInt(e.target.innerText); 
+                    calculateEMI();
+                    calculateEligibility();
+                });
+            });
+
+            // Calculator Tabs Logic
+            const tabEmi = document.getElementById('tab-emi');
+            const tabElig = document.getElementById('tab-elig');
+            const viewEmi = document.getElementById('emi-view');
+            const viewElig = document.getElementById('eligibility-view');
+
+            if(tabEmi && tabElig) {
+                tabEmi.addEventListener('click', () => {
+                    tabEmi.classList.add('active'); tabElig.classList.remove('active');
+                    viewEmi.style.display = 'block'; viewElig.style.display = 'none';
+                });
+                tabElig.addEventListener('click', () => {
+                    tabElig.classList.add('active'); tabEmi.classList.remove('active');
+                    viewElig.style.display = 'block'; viewEmi.style.display = 'none';
+                    calculateEligibility();
+                });
+            }
+
+            // DOC TABS LOGIC
+            const docTabs = document.querySelectorAll('.doc-tab');
+            const docContents = document.querySelectorAll('.doc-content');
+            if (docTabs.length > 0) {
+                docTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        docTabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        docContents.forEach(c => c.style.display = 'none');
+                        const targetId = 'doc-' + tab.getAttribute('data-target');
+                        document.getElementById(targetId).style.display = 'grid';
+                    });
+                });
+            }
+        });
+
+        // CHAT WIDGET LOGIC
+        const chatWidget = document.getElementById('chatWidget');
+        const chatInput = document.getElementById('chatInput');
+        const chatBody = document.getElementById('chatBody');
+
+        window.toggleChat = function() {
+            chatWidget.classList.toggle('active');
+            if(chatWidget.classList.contains('active')) chatInput.focus();
+        }
+
+        window.sendChat = function() {
+            const text = chatInput.value.trim();
+            if(text) {
+                const userMsg = document.createElement('div');
+                userMsg.className = 'chat-msg';
+                userMsg.style.background = 'var(--color-blue)';
+                userMsg.style.color = 'white';
+                userMsg.style.marginLeft = 'auto';
+                userMsg.style.borderBottomRightRadius = '4px';
+                userMsg.style.borderBottomLeftRadius = '16px';
+                userMsg.innerText = text;
+                chatBody.appendChild(userMsg);
+                chatInput.value = '';
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                setTimeout(() => {
+                    const botMsg = document.createElement('div');
+                    botMsg.className = 'chat-msg';
+                    botMsg.innerText = "Thanks for reaching out! Our executive will assist you shortly. Is there anything specific you are looking for?";
+                    chatBody.appendChild(botMsg);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, 1000);
+            }
+        }
+        
+        if(chatInput) {
+            chatInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') sendChat();
+            });
+        }
+    </script>
+</body>
+</html>

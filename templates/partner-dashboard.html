@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Choice | Partner Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root { 
+            --bg-main: #f8fafc; --text-dark: #0f172a; --text-muted: #475569; 
+            --color-blue: #2563eb; --color-cyan: #06b6d4; --color-purple: #8b5cf6; 
+            --color-green: #10b981; --color-rose: #f43f5e; --color-orange: #f97316;
+            --shadow-soft: 0 20px 40px -10px rgba(0,0,0,0.08);
+            --smooth: cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; cursor: none;}
+        body { background-color: var(--bg-main); color: var(--text-dark); min-height: 100vh; overflow-x: hidden; }
+        a, button, select, input { cursor: pointer !important; }
+
+        .cursor-dot { width: 8px; height: 8px; background: var(--color-purple); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; }
+        .cursor-outline { width: 40px; height: 40px; border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 50%; position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999998; transition: width 0.2s, height 0.2s, border-color 0.2s; }
+        body.hovering .cursor-outline { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-color: var(--color-pink); }
+        
+        .mesh-bg { position: fixed; inset: 0; z-index: -3; background: var(--bg-main); overflow: hidden; pointer-events: none; }
+        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatMesh 20s infinite alternate ease-in-out; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--color-blue); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: var(--color-purple); animation-delay: -5s; }
+        @keyframes floatMesh { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10vw, 15vh) scale(1.2); } 100% { transform: translate(-10vw, 5vh) scale(0.8); } }
+
+        .navbar { width: 100%; height: 85px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; position: fixed; top: 0; z-index: 100; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+        .custom-logo { height: 40px; }
+        .logout-btn { color: var(--color-rose); font-weight: 700; border: 2px solid #fecdd3; background: #fff1f2; padding: 10px 24px; border-radius: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none;}
+        .logout-btn:hover { background: var(--color-rose); color: white; border-color: var(--color-rose); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(244,63,94,0.2); }
+
+        .container { max-width: 1400px; margin: 130px auto 80px; padding: 0 32px; position: relative; z-index: 1; }
+        
+        .welcome-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;}
+        .welcome-header h1 { font-size: 36px; font-weight: 800; color: var(--text-dark); letter-spacing: -1px; }
+        .welcome-header p { color: var(--text-muted); font-size: 16px; font-weight: 500; }
+        .dsa-badge { background: #eff6ff; color: var(--color-blue); padding: 8px 16px; border-radius: 20px; font-weight: 800; font-size: 14px; border: 1px solid #bfdbfe; }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px; }
+        .stat-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-radius: 24px; padding: 25px; box-shadow: var(--shadow-soft); border: 1px solid #e2e8f0; transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--color-blue); }
+        .stat-title { font-size: 14px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
+        .stat-val { font-size: 32px; font-weight: 800; color: var(--text-dark); }
+        
+        /* Table Layout */
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-radius: 32px; padding: 40px; box-shadow: var(--shadow-soft); border: 1px solid #e2e8f0; }
+        .card-title { font-size: 20px; font-weight: 800; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; color: var(--text-dark); }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 15px 20px; background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e2e8f0; }
+        th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        td { padding: 20px; border-bottom: 1px solid #f1f5f9; font-weight: 600; font-size: 15px; color: var(--text-dark); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+        
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; display: inline-block; }
+        .status-Pending { background: #fef3c7; color: #d97706; }
+        .status-Sanctioned { background: #dbeafe; color: #2563eb; }
+        .status-Disbursed { background: #d1fae5; color: #059669; }
+        .status-Rejected { background: #ffe4e6; color: #e11d48; }
+
+        .btn-action { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 800; border: none; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-view { background: #eff6ff; color: var(--color-blue); border: 1px solid #bfdbfe; }
+        .btn-view:hover { background: var(--color-blue); color: white; }
+
+        /* Document Viewer Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; padding: 20px; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: white; width: 100%; max-width: 900px; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; transform: scale(0.95); transition: 0.3s; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .modal-header { padding: 20px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .modal-header h2 { font-size: 20px; font-weight: 800; color: var(--text-dark); }
+        .close-btn { background: #e2e8f0; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .close-btn:hover { background: var(--color-rose); color: white; transform: rotate(90deg); }
+
+        .modal-body { display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden; }
+        .doc-viewer { background: #f1f5f9; display: flex; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
+        .doc-viewer img { max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-soft); }
+        .doc-viewer p { color: var(--text-muted); font-weight: 600; }
+        
+        .doc-controls { padding: 30px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .doc-list { display: flex; flex-direction: column; gap: 10px; }
+        .doc-list-item { padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; cursor: pointer; transition: 0.3s; }
+        .doc-list-item.uploaded { border-color: var(--color-blue); background: #eff6ff; color: var(--color-blue); }
+        .doc-list-item.missing { color: var(--text-muted); background: #f8fafc; pointer-events: none; }
+        .doc-list-item:hover.uploaded { background: var(--color-blue); color: white; }
+        
+        .action-buttons { margin-top: auto; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        .btn-approve { background: var(--color-green); color: white; padding: 14px; text-align: center; border-radius: 12px; font-weight: 800; border: none; transition: 0.3s; width: 100%; box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .btn-approve:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(16,185,129,0.4); }
+        .btn-reject { background: white; color: var(--color-rose); border: 2px solid var(--color-rose); padding: 12px; text-align: center; border-radius: 12px; font-weight: 800; transition: 0.3s; width: 100%; }
+        .btn-reject:hover { background: var(--color-rose); color: white; }
+
+    </style>
+</head>
+<body>
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+    
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/"><img src="/static/Companylogo1.png" alt="Smart Choice" class="custom-logo hover-target"></a>
+            <a href="/logout" class="logout-btn hover-target">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-header gsap-anim">
+            <div>
+                <h1>Admin Workspace</h1>
+                <p>Welcome, {{ user.full_name }}. Review and verify KYC documents below.</p>
+            </div>
+            <div class="dsa-badge">Manager ID: {{ user.dsa_code }}</div>
+        </div>
+
+        <div class="stats-grid gsap-anim">
+            <div class="stat-card">
+                <div class="stat-title">Total Applications</div>
+                <div class="stat-val">{{ total_leads }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Sanctioned Loans</div>
+                <div class="stat-val" style="color: var(--color-blue);">{{ sanctioned_loans }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Disbursed</div>
+                <div class="stat-val" style="color: var(--color-green);">{{ formatted_disbursed }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Pending KYC</div>
+                <div class="stat-val" style="color: var(--color-orange);">
+                    {{ leads|selectattr("status", "equalto", "Pending")|list|length }}
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card gsap-anim">
+            <div class="card-title">
+                <svg width="24" height="24" fill="none" stroke="var(--color-purple)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Customer Applications & KYC
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>APP ID</th>
+                            <th>Customer Name</th>
+                            <th>Product</th>
+                            <th>Amount</th>
+                            <th>KYC Status</th>
+                            <th>Overall Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td style="color: var(--color-blue);">APP-{{ lead.id }}</td>
+                            <td>{{ lead.customer_name }}</td>
+                            <td><span style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-size: 13px;">{{ lead.product }}</span></td>
+                            <td style="color: var(--color-green);">₹ {{ "{:,.0f}".format(lead.amount) }}</td>
+                            <td>
+                                {% if lead.aadhaar_uploaded or lead.pan_uploaded or lead.bank_uploaded %}
+                                    <span style="color: var(--color-blue);">Docs Uploaded</span>
+                                {% else %}
+                                    <span style="color: var(--text-muted);">Awaiting Docs</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="status-badge status-{{ lead.status }}">{{ lead.status }}</span></td>
+                            <td>
+                                <button class="btn-action btn-view hover-target" 
+                                    onclick="openViewer('{{ lead.id }}', '{{ lead.customer_name }}', '{{ lead.aadhaar_uploaded }}', '{{ lead.pan_uploaded }}', '{{ lead.bank_uploaded }}')">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    Verify KYC
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not leads %}
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">No applications found yet.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="kycModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2>KYC Verification</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin-top: 5px;">Applicant: <span id="modal-customer-name" style="color: var(--text-dark);"></span> (APP-<span id="modal-lead-id"></span>)</p>
+                </div>
+                <button class="close-btn hover-target" onclick="closeViewer()">
+                    <svg width="18" height="18" fill="none" stroke="var(--text-dark)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="doc-viewer" id="docViewerArea">
+                    <p>Select a document from the right to view.</p>
+                </div>
+                
+                <div class="doc-controls">
+                    <h3 style="font-size: 15px; font-weight: 800; color: var(--text-dark);">Uploaded Documents</h3>
+                    
+                    <div class="doc-list">
+                        <div class="doc-list-item hover-target" id="btn-doc-aadhaar" onclick="loadDoc('aadhaar')">
+                            <span>Aadhaar Card</span> <span id="st-aadhaar"></span>
+                        </div>
+                        <div class="doc-list-item hover-target" id="btn-doc-pan" onclick="loadDoc('pan')">
+                            <span>PAN Card</span> <span id="st-pan"></span>
+                        </div>
+                        <div class="doc-list-item hover-target" id="btn-doc-bank" onclick="loadDoc('bank')">
+                            <span>Bank Statement</span> <span id="st-bank"></span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 5px;">Admin Actions</p>
+                        <button class="btn-approve hover-target" onclick="processLoan('Sanctioned')">Verify & Sanction Loan ✓</button>
+                        <button class="btn-reject hover-target" onclick="processLoan('Rejected')">Reject Application ✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof gsap !== 'undefined') {
+                gsap.fromTo('.gsap-anim', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" });
+            }
+            if (window.matchMedia("(pointer: fine)").matches) {
+                const cursorDot = document.getElementById('cursor-dot');
+                const cursorOutline = document.getElementById('cursor-outline');
+                window.addEventListener('mousemove', (e) => {
+                    cursorDot.style.left = `${e.clientX}px`; cursorDot.style.top = `${e.clientY}px`;
+                    setTimeout(() => { cursorOutline.style.left = `${e.clientX}px`; cursorOutline.style.top = `${e.clientY}px`; }, 50);
+                });
+                document.querySelectorAll('.hover-target, button').forEach(target => {
+                    target.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+                    target.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+                });
+            }
+        });
+
+        // 🟢 KYC VIEWER LOGIC 🟢
+        let currentLeadId = null;
+        const modal = document.getElementById('kycModal');
+        const viewerArea = document.getElementById('docViewerArea');
+
+        window.openViewer = function(id, name, hasAadhaar, hasPan, hasBank) {
+            currentLeadId = id;
+            document.getElementById('modal-lead-id').innerText = id;
+            document.getElementById('modal-customer-name').innerText = name;
+            
+            // Setup buttons based on what is uploaded
+            setupDocButton('aadhaar', hasAadhaar === 'True');
+            setupDocButton('pan', hasPan === 'True');
+            setupDocButton('bank', hasBank === 'True');
+            
+            viewerArea.innerHTML = '<p>Select an uploaded document to verify.</p>';
+            modal.classList.add('active');
+        }
+
+        window.closeViewer = function() {
+            modal.classList.remove('active');
+        }
+
+        function setupDocButton(type, isUploaded) {
+            const btn = document.getElementById(`btn-doc-${type}`);
+            const statusText = document.getElementById(`st-${type}`);
+            
+            if(isUploaded) {
+                btn.className = 'doc-list-item uploaded hover-target';
+                statusText.innerText = 'View 👁';
+                // Store extension smartly (Assuming png/jpg/pdf logic if needed, falling back to trying common image first)
+                // Since namma file extension save panrom, let's try to load .png first as default in mock
+            } else {
+                btn.className = 'doc-list-item missing';
+                statusText.innerText = 'Missing';
+            }
+        }
+
+        window.loadDoc = function(type) {
+            const btn = document.getElementById(`btn-doc-${type}`);
+            if(btn.classList.contains('missing')) return;
+            
+            // Highlight active button
+            document.querySelectorAll('.doc-list-item').forEach(b => {
+                if(b.classList.contains('uploaded')) b.style.background = '#eff6ff';
+            });
+            btn.style.background = 'var(--color-blue)';
+            btn.style.color = 'white';
+
+            // Show Loading
+            viewerArea.innerHTML = '<p>Loading document from Secure Vault...</p>';
+            
+            // In a real app we'd fetch the exact extension. For our simulation, we try .png then .pdf (Browser handles images easily)
+            // Example Path: /uploads/lead_1_aadhaar.png
+            setTimeout(() => {
+                const imgPath = `/uploads/lead_${currentLeadId}_${type}.png`; // Assume PNG for UI demonstration
+                viewerArea.innerHTML = `<img src="${imgPath}" onerror="this.onerror=null; this.parentElement.innerHTML='<p style=\\'color:red;\\'>Document format might be PDF or it cannot be previewed directly. Check Vault folder.</p>';" style="max-height: 100%;">`;
+            }, 500);
+        }
+
+        // 🟢 ADMIN PROCESS LOAN LOGIC 🟢
+        window.processLoan = async function(action) {
+            const btnApprove = document.querySelector('.btn-approve');
+            const originalText = btnApprove.innerText;
+            btnApprove.innerText = "Processing...";
+
+            try {
+                const response = await fetch('/api/admin_action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lead_id: currentLeadId, action: action })
+                });
+                const data = await response.json();
+                
+                if(data.success) {
+                    alert(data.message);
+                    window.location.reload(); // Reload to show updated table
+                } else {
+                    alert("Error: " + data.message);
+                    btnApprove.innerText = originalText;
+                }
+            } catch(error) {
+                alert("Server Error!");
+                btnApprove.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+</html>
